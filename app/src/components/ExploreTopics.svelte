@@ -22,6 +22,7 @@ import Topic from "./Topic.svelte";
 
 <style lang="less">
     .explore-topics {
+        margin-top: 1em;
         display: flex;
         flex-flow: row wrap;
         gap: 0.5em;

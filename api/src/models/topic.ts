@@ -41,68 +41,49 @@ export function filter(
         tutors,
     };
 
-    const query_string = [
-      "CALL {",
-      "MATCH (topic:Topic)--(e:Essay)--(:Programme { id: $programme })",
-      "WHERE topic.name =~ $filter",
-    ];
-
     const match_clauses = ["(topic:Topic)--(essay:Essay)"];
     const where_clauses = ["topic.name =~ $filter"];
 
-    let any_join = false;
     if (categories && categories.length > 0) {
-      any_join = true;
-      query_string.push(
-        "RETURN topic, COUNT(e) AS weight",
-        "UNION ALL",
-        "MATCH (topic:Topic)--(e:Essay)--(category:Category)",
-        "WHERE topic.name =~ $filter"
-      );
+      match_clauses.push("(category:Category)");
       if (Array.isArray(categories)) {
-        query_string.push("AND category.id IN $categories");
+        where_clauses.push("category.id IN $categories");
       } else {
-        query_string.push("AND category.id = $categories");
+        where_clauses.push("category.id = $categories");
       }
+      where_clauses.push("(essay)--(category)");
     }
+
     if (client && client !== "") {
-      any_join = true;
-      query_string.push(
-        "RETURN topic, COUNT(e) AS weight",
-        "UNION ALL",
-        "MATCH (topic:Topic)--(e:Essay)--(client:Client)",
-        "WHERE topic.name =~ $filter",
-        "AND client.id = $client"
-      );
+      match_clauses.push("(client:Client { id: $client })");
+      where_clauses.push("(essay)--(client)");
     }
+
     if (tutors && tutors.length > 0) {
-      any_join = true;
-      query_string.push(
-        "RETURN topic, COUNT(e) AS weight",
-        "UNION ALL",
-        "MATCH (topic:Topic)--(e:Essay)--(tutor:Tutor)",
-        "WHERE topic.name =~ $filter"
-      );
+      match_clauses.push("(tutor:Tutor)");
       if (Array.isArray(tutors)) {
-        query_string.push("AND tutor.id IN $tutors");
+        where_clauses.push("tutor.id IN $tutors");
       } else {
-        query_string.push("AND tutor.id = $tutors");
+        where_clauses.push("tutor.id = $tutors");
       }
+      where_clauses.push("(essay)--(tutor)");
     }
 
-    query_string.push(
-      any_join ? "RETURN topic, COUNT(e) AS weight" : "",
-      "}", // end of CALL,
-      "RETURN topic, SUM(weight) AS weight",
-      "ORDER BY weight DESC, topic.name ASC",
-      "LIMIT 100"
-    );
+    const query_string =
+      "MATCH " +
+      match_clauses.join(", ") +
+      "\n" +
+      "WHERE " +
+      where_clauses.join(" AND ") +
+      "\n" +
+      "RETURN topic, COUNT(essay) AS relevance\n" +
+      "ORDER BY relevance DESC, topic.name ASC\n" +
+      "LIMIT 100";
 
-    console.log(query_string.join("\n"));
-    console.log({ query });
+    console.log({ query_string, query });
 
     return session.readTransaction(async (tx) => {
-      const result = await tx.run(query_string.join(" "), query);
+      const result = await tx.run(query_string, query);
       const topics = result.records.map((record) => {
         return new Topic(record.get("topic").properties);
       });

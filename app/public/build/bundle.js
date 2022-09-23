@@ -8480,7 +8480,7 @@ var app = (function () {
     	return child_ctx;
     }
 
-    // (30:4) {#each topics as topic}
+    // (31:4) {#each topics as topic}
     function create_each_block(ctx) {
     	let topic;
     	let current;
@@ -8521,7 +8521,7 @@ var app = (function () {
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(30:4) {#each topics as topic}",
+    		source: "(31:4) {#each topics as topic}",
     		ctx
     	});
 
@@ -8551,8 +8551,8 @@ var app = (function () {
     				each_blocks[i].c();
     			}
 
-    			attr_dev(div, "class", "explore-topics svelte-dd94a");
-    			add_location(div, file$1, 28, 0, 711);
+    			attr_dev(div, "class", "explore-topics svelte-nnwvky");
+    			add_location(div, file$1, 29, 0, 730);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");

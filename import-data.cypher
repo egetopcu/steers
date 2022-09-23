@@ -23,7 +23,7 @@ CREATE INDEX programme_index IF NOT EXISTS FOR (programme:Programme) ON (program
 CREATE TEXT INDEX programme_name_index IF NOT EXISTS FOR (programme:Programme) ON (programme.name);
 :auto USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM "file:///programme.csv" AS row
-MERGE (programme:Programme {id: row.id, name: row.name, code: row.code})
+MERGE (programme:Programme {id: row.id, name: row.name})
 RETURN COUNT(programme);
 
 CREATE INDEX category_index IF NOT EXISTS FOR (category:Category) ON (category.id);
@@ -39,10 +39,7 @@ CREATE TEXT INDEX topic_name_index IF NOT EXISTS FOR (topic:Topic) ON (topic.nam
 :auto USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM "file:///topic.csv" AS row
 MERGE (topic:Topic {id: row.id })
-SET topic.name = row.name
-SET topic.source = CASE trim(row.source) WHEN "" THEN null ELSE row.source END
-SET topic.type = CASE trim(row.type) WHEN "" THEN null ELSE row.type END
-SET topic.code = CASE trim(row.code) WHEN "" THEN null ELSE row.code END;
+SET topic.name = row.name;
 
 CREATE INDEX essay_index IF NOT EXISTS FOR (essay:Essay) ON (essay.id);
 CREATE FULLTEXT INDEX essay_fulltext_index IF NOT EXISTS FOR (essay:Essay) ON EACH [essay.title, essay.summary, essay.summary_en];
