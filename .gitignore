@@ -1,0 +1,16 @@
+.git
+node_modules
+
+
+# compiled stuff
+api/lib/
+
+
+# data
+import/
+data/
+db/data/
+db/logs/
+
+.env
+
