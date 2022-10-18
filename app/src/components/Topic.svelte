@@ -1,8 +1,7 @@
 <script lang="ts">
-import type { ITopic } from "../utils/types";
+    import type { TopicData } from "@steers/common"
 
-
-    export let topic: ITopic;
+    export let topic: TopicData;
 </script>
 
 <style lang="less">
@@ -14,6 +13,6 @@ import type { ITopic } from "../utils/types";
 </style>
 
 <div class="topic">
-    {topic.label}
+    {topic.name}
 </div>
 

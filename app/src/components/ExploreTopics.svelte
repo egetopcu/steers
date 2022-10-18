@@ -1,6 +1,6 @@
 <script lang="ts">
-import { getTopics, getTutors } from "../utils/api";
-import type { ITopic } from "../utils/types";
+import type { TopicData } from "@steers/common";
+import { getTopics } from "../utils/api";
 import Topic from "./Topic.svelte";
 
     export let programme;
@@ -9,7 +9,7 @@ import Topic from "./Topic.svelte";
     export let supervisors;
     
     // todo: query supervisors from API
-    let topics: ITopic[] = [];
+    let topics: TopicData[] = [];
 
     $: {
         updateTopics(programme, categories, client, supervisors);

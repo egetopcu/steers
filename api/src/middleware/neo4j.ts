@@ -10,8 +10,9 @@ declare global {
 }
 
 const db = neo4j.driver(
-    process.env.NEO4J_URI!,
-    neo4j.auth.basic(process.env.NEO4J_USER!, process.env.NEO4J_PASSWORD!)
+  process.env.NEO4J_URI!,
+  neo4j.auth.basic(process.env.NEO4J_USER!, process.env.NEO4J_PASSWORD!),
+  { disableLosslessIntegers: true }
 );
 
 export const handle_neo4j_session: RequestHandler = async (

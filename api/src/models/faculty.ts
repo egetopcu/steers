@@ -1,13 +1,11 @@
-export interface FacultyData {
-    id: number;
-    name: string;
-}
-export class Faculty {
-    id: number;
-    name: string;
+import { FacultyData, IdType } from "@steers/common";
 
-    constructor(record: FacultyData) {
-        this.id = record.id;
-        this.name = record.name;
-    }
+export class Faculty {
+  id: IdType;
+  name: string;
+
+  constructor(record: FacultyData) {
+    this.id = record.id;
+    this.name = record.name;
+  }
 }

@@ -6,7 +6,8 @@
   import SelectSupervisor from "./components/SelectSupervisor.svelte";
   import SelectTopic from "./components/SelectTopic.svelte";
   import ExploreSupervisors from "./components/ExploreSupervisors.svelte";
-import ExploreTopics from "./components/ExploreTopics.svelte";
+  import ExploreTopics from "./components/ExploreTopics.svelte";
+  import EssayTable from "./components/EssayTable.svelte";
 
   let programme = null;
   let categories = [];
@@ -60,21 +61,23 @@ import ExploreTopics from "./components/ExploreTopics.svelte";
           <ExploreSupervisors {categories} {programme} {client} {topics} />
         {/if}
         {#if goal === "topic"}
-          <ExploreTopics {categories} {programme} supervisors={tutors} {client} />
+          <ExploreTopics
+            {categories}
+            {programme}
+            supervisors={tutors}
+            {client}
+          />
         {/if}
         {#if goal === "client"}
           <!-- <ExploreClients {categories} {programme} {tutors} {topics} /> -->
         {/if}
       {/if}
+      <h2>Query</h2>
       <code style="text-align: left;">
-        <pre>
-                    {JSON.stringify(
-            { programme, categories, goal, tutors, client, topics },
-            null,
-            2
-          )}
-                    </pre>
+        <pre>{JSON.stringify({ programme, categories, goal, tutors, client, topics }, null, 2 )}</pre>
       </code>
+      <h2>Essays</h2>
+      <EssayTable {categories} {programme} {client} {topics} {tutors} />
     </form>
   </div>
 </main>

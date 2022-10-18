@@ -1,182 +1,193 @@
 import _ from "lodash";
 import { Date, Record, Session } from "neo4j-driver";
-import { Category, CategoryData } from "./category";
-import { Client, ClientData } from "./client";
-import { Faculty, FacultyData } from "./faculty";
-import { Programme, ProgrammeData } from "./programme";
-import { Topic, TopicData } from "./topic";
-import { Tutor, TutorData } from "./tutor";
-import {
-    relatableProperties,
-    relatablePropertyLabel,
-    RelatableQuery,
-} from "./utils";
+import { Category } from "./category";
+import { Client } from "./client";
+import { Faculty } from "./faculty";
+import { Programme } from "./programme";
+import { Topic } from "./topic";
+import { Tutor } from "./tutor";
 
-export interface EssayData {
-    id: number;
-    title: string;
-    author: string;
-    date: Date;
-    type: string;
-    language?: string;
-    abstract?: string;
-    summary_en?: string;
-    restricted: boolean;
-    scraped_watson: boolean;
-    scraped_meaningcloud: boolean;
-}
+import {
+  Node,
+  EssayData,
+  FacultyData,
+  ProgrammeData,
+  TutorData,
+  TopicData,
+  CategoryData,
+  ClientData,
+} from "@steers/common";
 
 export type EssayRecord = Record<{
-    essay: { properties: EssayData };
-    faculty?: FacultyData;
-    programme?: ProgrammeData;
-    tutors?: TutorData[];
-    topics?: TopicData[];
-    categories?: CategoryData[];
-    client?: ClientData;
+  essay: Node<EssayData>;
+  faculty?: Node<FacultyData>;
+  programme?: Node<ProgrammeData>;
+  tutors?: Node<TutorData>[];
+  topics?: Node<TopicData>[];
+  categories?: Node<CategoryData>[];
+  client?: Node<ClientData>;
 }>;
 
 export class Essay implements EssayData {
-    public id: number;
-    public title: string;
-    public author: string;
-    public date: Date;
-    public type: string;
-    public language?: string;
-    public abstract?: string;
-    public summary_en?: string;
-    public restricted: boolean = false;
-    public scraped_watson: boolean = false;
-    public scraped_meaningcloud: boolean = false;
-    public faculty?: Faculty;
-    public programme?: Programme;
-    public topics?: Topic[];
-    public categories?: Category[];
-    public tutors?: Tutor[];
-    public client?: Client;
+  public id: number;
+  public title: string;
+  public author: string;
+  public date: Date;
+  public type: string;
+  public language?: string;
+  public abstract?: string;
+  public summary_en?: string;
+  public restricted: boolean = false;
+  public scraped_watson: boolean = false;
+  public scraped_meaningcloud: boolean = false;
+  public faculty?: Faculty;
+  public programme?: Programme;
+  public topics?: Topic[];
+  public categories?: Category[];
+  public tutors?: Tutor[];
+  public client?: Client;
 
-    constructor(record: EssayRecord) {
-        const essay = record.get("essay").properties;
+  constructor(record: EssayRecord) {
+    const essay = record.get("essay").properties;
 
-        this.id = essay.id;
-        this.title = essay.title;
-        this.author = essay.author;
-        this.date = essay.date;
-        this.type = essay.type;
-        this.language = essay.language;
-        this.abstract = essay.abstract;
-        this.summary_en = essay.summary_en;
-        this.restricted = essay.restricted;
-        this.scraped_watson = essay.scraped_watson;
-        this.scraped_meaningcloud = essay.scraped_meaningcloud;
+    this.id = essay.id;
+    this.title = essay.title;
+    this.author = essay.author;
+    this.date = essay.date;
+    this.type = essay.type;
+    this.language = essay.language;
+    this.abstract = essay.abstract;
+    this.summary_en = essay.summary_en;
+    this.restricted = essay.restricted;
 
-        if (record.has("faculty")) {
-            this.faculty = new Faculty(record.get("faculty")!);
-        }
-        if (record.has("programme")) {
-            this.programme = new Programme(record.get("programme")!);
-        }
-        if (record.has("topics")) {
-            this.topics = record
-                .get("topics")!
-                .map((topic) => new Topic(topic));
-        }
-
-        if (record.has("categories")) {
-            this.categories = record
-                .get("categories")!
-                .map((category) => new Category(category));
-        }
-
-        if (record.has("tutors")) {
-            this.tutors = record
-                .get("tutors")!
-                .map((tutor) => new Tutor(tutor));
-        }
-
-        if (record.has("client")) {
-            this.client = new Client(record.get("client")!);
-        }
+    if (record.has("faculty") && record.get("faculty")) {
+      this.faculty = new Faculty(record.get("faculty")!.properties);
     }
+
+    if (record.has("programme") && record.get("programme")) {
+      this.programme = new Programme(record.get("programme")!.properties);
+    }
+
+    if (record.has("client") && record.get("client")) {
+      this.client = new Client(record.get("client")!.properties);
+    }
+
+    if (record.has("topics")) {
+      this.topics = record
+        .get("topics")!
+        .map((topic) => new Topic(topic.properties));
+    }
+
+    if (record.has("categories")) {
+      this.categories = record
+        .get("categories")!
+        .map((category) => new Category(category.properties));
+    }
+
+    if (record.has("tutors")) {
+      this.tutors = record
+        .get("tutors")!
+        .map((tutor) => new Tutor(tutor.properties));
+    }
+  }
 }
 
-export async function getById(session: Session, id: string): Promise<Essay> {
-    const query = [
-        "MATCH (essay:Essay {id: $essayId})",
-        "MATCH (essay)-[:HOSTED_BY]->(faculty:Faculty)",
-        "MATCH (essay)-[:HOSTED_BY]->(programme:Programme)",
-        "MATCH (essay)-[:SUPERVISED_BY]->(tutor:Tutor)",
-        "MATCH (essay)-[:HAS_TOPIC]->(topic:Topic)",
-        "OPTIONAL MATCH (essay)-[:HAS_CATEGORY]->(category:Category)",
-        "OPTIONAL MATCH (essay)-[:HOSTED_BY]->(client:Client)",
-        "WITH DISTINCT essay, client, faculty, programme, tutor, topic, category",
-        "RETURN DISTINCT essay, client, faculty, programme,",
-        "collect(DISTINCT tutor) as tutors,",
-        "collect(DISTINCT topic) as topics,",
-        "collect(DISTINCT category) as categories",
-    ].join("\n");
+export async function filter(
+  session: Session,
+  programme: number,
+  categories: number[],
+  tutors: number[],
+  topics: number[],
+  client: number
+): Promise<Essay[]> {
+  const query = {
+    programme,
+    categories,
+    tutors,
+    topics,
+    client,
+  };
 
-    const result = await session.readTransaction((tx) =>
-        tx.run(query, { essayId: id })
-    );
-    if (!_.isEmpty(result.records)) {
-        const record = result.records[0] as EssayRecord;
-        return new Essay(record);
+  const match_clauses = ["(essay:Essay)"];
+  const optional_match_clauses = [];
+  const where_clauses = [];
+  const return_clauses = [
+    "DISTINCT essay",
+    "programme",
+    "collect(DISTINCT category) as categories",
+    "client",
+    // "collect(DISTINCT tutor) as tutors",
+    "collect(DISTINCT topic) as topics",
+  ];
+
+  match_clauses.push("(essay)--(programme:Programme)");
+  if (programme) {
+    where_clauses.push("programme.id = $programme");
+  }
+  //   else {
+  //     optional_match_clauses.push("(essay)--(programme:Programme)");
+  //   }
+
+  if (categories && categories.length > 0) {
+    match_clauses.push("(essay)--(category:Category)");
+    if (Array.isArray(categories)) {
+      where_clauses.push("category.id IN $categories");
     } else {
-        throw {
-            status: 404,
-            message: `Essay not found`,
-        };
+      where_clauses.push("category.id = $categories");
     }
-}
+  } else {
+    optional_match_clauses.push("(essay)--(category:Category)");
+  }
 
-export async function getRelated(session: Session, query: RelatableQuery) {
-    let query_string = `MATCH (essay:Essay)`;
-    let match_clauses = [];
-    let where_clauses = [];
-    let with_properties = [];
+  if (client) {
+    match_clauses.push("(essay)--(client:Client { id: $client })");
+  } else {
+    optional_match_clauses.push("(essay)--(client:Client)");
+  }
 
-    for (const key of relatableProperties) {
-        if (query[key]) {
-            if (Array.isArray(query[key])) {
-                match_clauses.push(
-                    `OPTIONAL MATCH (essay)--(${key}:${relatablePropertyLabel[key]}) WHERE ${key}.id IN $${key}`
-                );
-                where_clauses.push(`${key}_count >= ${query[key]!.length}`);
-                with_properties.push(`count(${key}) as ${key}_count`);
-            } else {
-                where_clauses.push(
-                    `EXISTS { MATCH (essay)--(${key}:${relatablePropertyLabel[key]} {id: $${key}})}`
-                );
-            }
-        }
-    }
-    if (match_clauses.length > 0) {
-        query_string += "\n" + match_clauses.join("\n");
-        query_string += `\nWITH essay, ${with_properties.join(", ")}`;
-    }
-    if (where_clauses.length > 0) {
-        query_string += `\nWHERE ${where_clauses.join("\n AND ")}`;
+  //   if (tutors && tutors.length > 0) {
+  //     if (Array.isArray(tutors)) {
+  //       where_clauses.push("tutor.id IN $tutors");
+  //     } else {
+  //       where_clauses.push("tutor.id = $tutors");
+  //     }
+  //     match_clauses.push("(essay)--(tutor:Tutor)")
+  //   } else {
+  //     optional_match_clauses.push("(essay)--(tutor:Tutor)")
+  //   }
+
+  if (topics && topics.length > 0) {
+    match_clauses.push("(essay)--(topic:Topic)");
+    if (Array.isArray(topics)) {
+      where_clauses.push("topic.id IN $topics");
     } else {
-        throw {
-            message: "No valid query parameters provided",
-            status: 400,
-        };
+      where_clauses.push("topic.id = $topics");
     }
+  } else {
+    optional_match_clauses.push("(essay)--(topic:Topic)");
+  }
 
-    query_string += `\nRETURN DISTINCT essay`;
+  let query_string = `MATCH ${match_clauses.join(", ")}\n`;
 
-    console.log(query_string, { query });
+  if (where_clauses.length > 0) {
+    query_string += `WHERE ${where_clauses.join(" AND ")}\n`;
+  }
 
-    const result = await session.readTransaction((tx) =>
-        tx.run(query_string, query)
-    );
-    if (!_.isEmpty(result.records)) {
-        const records = result.records as EssayRecord[];
-        console.log({ count: records.length });
+  query_string += `OPTIONAL MATCH ${optional_match_clauses.join(", ")}\n`;
+  query_string += `RETURN ${return_clauses.join(", ")}\n`;
+  query_string += `LIMIT 100`;
 
-        return _.map(records, (r) => new Essay(r));
-    } else {
-        return [];
-    }
+  console.log({ query_string, query });
+
+  return session.readTransaction(async (tx) => {
+    const result = (await tx.run(query_string, query)) as unknown as {
+      records: EssayRecord[];
+    };
+
+    const essays = result.records.map((record) => {
+      return new Essay(record);
+    });
+    console.log({ results: essays?.length });
+    return essays;
+  });
 }

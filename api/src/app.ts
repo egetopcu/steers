@@ -4,7 +4,6 @@ config({ debug: true, path: "../.env" });
 import express, { NextFunction, Request, Response } from "express";
 import morgan from "morgan";
 import cors from "cors";
-import _ from "lodash";
 
 import { handle_neo4j_session } from "./middleware/neo4j";
 import * as category from "./routes/category";
@@ -27,6 +26,7 @@ app.get("/programmes", programme.filter);
 app.get("/categories", category.filter);
 app.get("/clients", client.filter);
 app.get("/topics", topic.filter);
+app.get("/essays", essay.filter);
 // app.get("/essays/related", essay.getRelated);
 // app.get("/categories/find", category.findMany);
 // app.get("/categories/related", category.getRelated);
