@@ -304,15 +304,51 @@ var app = (function () {
             throw new Error('Function called outside component initialization');
         return current_component;
     }
+    /**
+     * Schedules a callback to run immediately before the component is updated after any state change.
+     *
+     * The first time the callback runs will be before the initial `onMount`
+     *
+     * https://svelte.dev/docs#run-time-svelte-beforeupdate
+     */
     function beforeUpdate(fn) {
         get_current_component().$$.before_update.push(fn);
     }
+    /**
+     * The `onMount` function schedules a callback to run as soon as the component has been mounted to the DOM.
+     * It must be called during the component's initialisation (but doesn't need to live *inside* the component;
+     * it can be called from an external module).
+     *
+     * `onMount` does not run inside a [server-side component](/docs#run-time-server-side-component-api).
+     *
+     * https://svelte.dev/docs#run-time-svelte-onmount
+     */
     function onMount(fn) {
         get_current_component().$$.on_mount.push(fn);
     }
+    /**
+     * Schedules a callback to run immediately before the component is unmounted.
+     *
+     * Out of `onMount`, `beforeUpdate`, `afterUpdate` and `onDestroy`, this is the
+     * only one that runs inside a server-side component.
+     *
+     * https://svelte.dev/docs#run-time-svelte-ondestroy
+     */
     function onDestroy(fn) {
         get_current_component().$$.on_destroy.push(fn);
     }
+    /**
+     * Creates an event dispatcher that can be used to dispatch [component events](/docs#template-syntax-component-directives-on-eventname).
+     * Event dispatchers are functions that can take two arguments: `name` and `detail`.
+     *
+     * Component events created with `createEventDispatcher` create a
+     * [CustomEvent](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent).
+     * These events do not [bubble](https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Building_blocks/Events#Event_bubbling_and_capture).
+     * The `detail` argument corresponds to the [CustomEvent.detail](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent/detail)
+     * property and can contain any type of data.
+     *
+     * https://svelte.dev/docs#run-time-svelte-createeventdispatcher
+     */
     function createEventDispatcher() {
         const component = get_current_component();
         return (type, detail, { cancelable = false } = {}) => {
@@ -464,6 +500,9 @@ var app = (function () {
             });
             block.o(local);
         }
+        else if (callback) {
+            callback();
+        }
     }
 
     const globals = (typeof window !== 'undefined'
@@ -610,14 +649,17 @@ var app = (function () {
         block && block.c();
     }
     function mount_component(component, target, anchor, customElement) {
-        const { fragment, on_mount, on_destroy, after_update } = component.$$;
+        const { fragment, after_update } = component.$$;
         fragment && fragment.m(target, anchor);
         if (!customElement) {
             // onMount happens before the initial afterUpdate
             add_render_callback(() => {
-                const new_on_destroy = on_mount.map(run).filter(is_function);
-                if (on_destroy) {
-                    on_destroy.push(...new_on_destroy);
+                const new_on_destroy = component.$$.on_mount.map(run).filter(is_function);
+                // if the component was destroyed immediately
+                // it will update the `$$.on_destroy` reference to `null`.
+                // the destructured on_destroy may still reference to the old array
+                if (component.$$.on_destroy) {
+                    component.$$.on_destroy.push(...new_on_destroy);
                 }
                 else {
                     // Edge case - component was destroyed immediately,
@@ -653,7 +695,7 @@ var app = (function () {
         set_current_component(component);
         const $$ = component.$$ = {
             fragment: null,
-            ctx: null,
+            ctx: [],
             // state
             props,
             update: noop,
@@ -718,6 +760,9 @@ var app = (function () {
             this.$destroy = noop;
         }
         $on(type, callback) {
+            if (!is_function(callback)) {
+                return noop;
+            }
             const callbacks = (this.$$.callbacks[type] || (this.$$.callbacks[type] = []));
             callbacks.push(callback);
             return () => {
@@ -736,7 +781,7 @@ var app = (function () {
     }
 
     function dispatch_dev(type, detail) {
-        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.48.0' }, detail), { bubbles: true }));
+        document.dispatchEvent(custom_event(type, Object.assign({ version: '3.52.0' }, detail), { bubbles: true }));
     }
     function append_dev(target, node) {
         dispatch_dev('SvelteDOMInsert', { target, node });
@@ -797,6 +842,25 @@ var app = (function () {
             }
         }
     }
+    function construct_svelte_component_dev(component, props) {
+        const error_message = 'this={...} of <svelte:component> should specify a Svelte component.';
+        try {
+            const instance = new component(props);
+            if (!instance.$$ || !instance.$set || !instance.$on || !instance.$destroy) {
+                throw new Error(error_message);
+            }
+            return instance;
+        }
+        catch (err) {
+            const { message } = err;
+            if (typeof message === 'string' && message.indexOf('is not a constructor') !== -1) {
+                throw new Error(error_message);
+            }
+            else {
+                throw err;
+            }
+        }
+    }
     /**
      * Base class for Svelte components with some minor dev-enhancements. Used when dev=true.
      */
@@ -817,7 +881,7 @@ var app = (function () {
         $inject_state() { }
     }
 
-    /* src\components\ChooseGoal.svelte generated by Svelte v3.48.0 */
+    /* src\components\ChooseGoal.svelte generated by Svelte v3.52.0 */
 
     const file$p = "src\\components\\ChooseGoal.svelte";
 
@@ -937,6 +1001,13 @@ var app = (function () {
     	validate_slots('ChooseGoal', slots, []);
     	let { goal = undefined } = $$props;
     	let { enabled } = $$props;
+
+    	$$self.$$.on_mount.push(function () {
+    		if (enabled === undefined && !('enabled' in $$props || $$self.$$.bound[$$self.$$.props['enabled']])) {
+    			console.warn("<ChooseGoal> was created without expected prop 'enabled'");
+    		}
+    	});
+
     	const writable_props = ['goal', 'enabled'];
 
     	Object.keys($$props).forEach(key => {
@@ -977,13 +1048,6 @@ var app = (function () {
     			options,
     			id: create_fragment$s.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*enabled*/ ctx[1] === undefined && !('enabled' in props)) {
-    			console.warn("<ChooseGoal> was created without expected prop 'enabled'");
-    		}
     	}
 
     	get goal() {
@@ -1022,9 +1086,9 @@ var app = (function () {
         return out;
     }
 
-    /* node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\Item.svelte generated by Svelte v3.48.0 */
+    /* ..\node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\Item.svelte generated by Svelte v3.52.0 */
 
-    const file$o = "node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\Item.svelte";
+    const file$o = "..\\node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\Item.svelte";
 
     function create_fragment$r(ctx) {
     	let div;
@@ -1255,8 +1319,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\List.svelte generated by Svelte v3.48.0 */
-    const file$n = "node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\List.svelte";
+    /* ..\node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\List.svelte generated by Svelte v3.52.0 */
+    const file$n = "..\\node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\List.svelte";
 
     function get_each_context$8(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -1414,7 +1478,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     	}
 
     	const block = {
@@ -1423,10 +1487,7 @@ var app = (function () {
     			switch_instance_anchor = empty();
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -1452,7 +1513,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
     					mount_component(switch_instance, switch_instance_anchor.parentNode, switch_instance_anchor);
@@ -1595,7 +1656,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     	}
 
     	function mouseover_handler_1() {
@@ -1621,11 +1682,7 @@ var app = (function () {
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
-
-    			if (switch_instance) {
-    				mount_component(switch_instance, div, null);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, div, null);
     			append_dev(div, t);
     			current = true;
 
@@ -1662,7 +1719,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
     					mount_component(switch_instance, div, t);
@@ -1844,7 +1901,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     	}
 
     	function mouseover_handler() {
@@ -1868,11 +1925,7 @@ var app = (function () {
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
-
-    			if (switch_instance) {
-    				mount_component(switch_instance, div, null);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, div, null);
     			current = true;
 
     			if (!mounted) {
@@ -1909,7 +1962,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
     					mount_component(switch_instance, div, null);
@@ -2024,7 +2077,7 @@ var app = (function () {
     				attr_dev(div, "style", /*listStyle*/ ctx[14]);
     			}
 
-    			if (dirty[0] & /*isVirtualList*/ 32) {
+    			if (!current || dirty[0] & /*isVirtualList*/ 32) {
     				toggle_class(div, "virtualList", /*isVirtualList*/ ctx[5]);
     			}
     		},
@@ -2664,9 +2717,9 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\Selection.svelte generated by Svelte v3.48.0 */
+    /* ..\node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\Selection.svelte generated by Svelte v3.52.0 */
 
-    const file$m = "node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\Selection.svelte";
+    const file$m = "..\\node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\Selection.svelte";
 
     function create_fragment$p(ctx) {
     	let div;
@@ -2765,8 +2818,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\MultiSelection.svelte generated by Svelte v3.48.0 */
-    const file$l = "node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\MultiSelection.svelte";
+    /* ..\node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\MultiSelection.svelte generated by Svelte v3.52.0 */
+    const file$l = "..\\node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\MultiSelection.svelte";
 
     function get_each_context$7(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -3122,8 +3175,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\VirtualList.svelte generated by Svelte v3.48.0 */
-    const file$k = "node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\VirtualList.svelte";
+    /* ..\node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\VirtualList.svelte generated by Svelte v3.52.0 */
+    const file$k = "..\\node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\VirtualList.svelte";
 
     function get_each_context$6(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -3659,9 +3712,9 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\ClearIcon.svelte generated by Svelte v3.48.0 */
+    /* ..\node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\ClearIcon.svelte generated by Svelte v3.52.0 */
 
-    const file$j = "node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\ClearIcon.svelte";
+    const file$j = "..\\node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\ClearIcon.svelte";
 
     function create_fragment$m(ctx) {
     	let svg;
@@ -3756,10 +3809,10 @@ var app = (function () {
         };
     }
 
-    /* node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\Select.svelte generated by Svelte v3.48.0 */
+    /* ..\node_modules\.pnpm\svelte-select@4.4.7\node_modules\svelte-select\src\Select.svelte generated by Svelte v3.52.0 */
 
-    const { Object: Object_1, console: console_1$1 } = globals;
-    const file$i = "node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\Select.svelte";
+    const { Object: Object_1, console: console_1$3 } = globals;
+    const file$i = "..\\node_modules\\.pnpm\\svelte-select@4.4.7\\node_modules\\svelte-select\\src\\Select.svelte";
 
     function get_each_context$5(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -3838,7 +3891,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props());
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props());
     	}
 
     	const block = {
@@ -3847,10 +3900,7 @@ var app = (function () {
     			switch_instance_anchor = empty();
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -3872,7 +3922,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props());
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props());
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
     					mount_component(switch_instance, switch_instance_anchor.parentNode, switch_instance_anchor);
@@ -3930,7 +3980,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     		switch_instance.$on("multiItemClear", /*handleMultiItemClear*/ ctx[38]);
     		switch_instance.$on("focus", /*handleFocus*/ ctx[40]);
     	}
@@ -3941,10 +3991,7 @@ var app = (function () {
     			switch_instance_anchor = empty();
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -3969,7 +4016,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					switch_instance.$on("multiItemClear", /*handleMultiItemClear*/ ctx[38]);
     					switch_instance.$on("focus", /*handleFocus*/ ctx[40]);
     					create_component(switch_instance.$$.fragment);
@@ -4028,7 +4075,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     	}
 
     	const block = {
@@ -4040,11 +4087,7 @@ var app = (function () {
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
-
-    			if (switch_instance) {
-    				mount_component(switch_instance, div, null);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, div, null);
     			current = true;
 
     			if (!mounted) {
@@ -4070,7 +4113,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
     					mount_component(switch_instance, div, null);
@@ -4123,7 +4166,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props());
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props());
     	}
 
     	const block = {
@@ -4136,11 +4179,7 @@ var app = (function () {
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
-
-    			if (switch_instance) {
-    				mount_component(switch_instance, div, null);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, div, null);
     			current = true;
 
     			if (!mounted) {
@@ -4162,7 +4201,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props());
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props());
     					create_component(switch_instance.$$.fragment);
     					transition_in(switch_instance.$$.fragment, 1);
     					mount_component(switch_instance, div, null);
@@ -4407,7 +4446,7 @@ var app = (function () {
     	}
 
     	if (switch_value) {
-    		switch_instance = new switch_value(switch_props(ctx));
+    		switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     		binding_callbacks.push(() => bind(switch_instance, 'hoverItemIndex', switch_instance_hoverItemIndex_binding));
     		switch_instance.$on("itemSelected", /*itemSelected*/ ctx[43]);
     		switch_instance.$on("itemCreated", /*itemCreated*/ ctx[44]);
@@ -4420,10 +4459,7 @@ var app = (function () {
     			switch_instance_anchor = empty();
     		},
     		m: function mount(target, anchor) {
-    			if (switch_instance) {
-    				mount_component(switch_instance, target, anchor);
-    			}
-
+    			if (switch_instance) mount_component(switch_instance, target, anchor);
     			insert_dev(target, switch_instance_anchor, anchor);
     			current = true;
     		},
@@ -4451,7 +4487,7 @@ var app = (function () {
     				}
 
     				if (switch_value) {
-    					switch_instance = new switch_value(switch_props(ctx));
+    					switch_instance = construct_svelte_component_dev(switch_value, switch_props(ctx));
     					binding_callbacks.push(() => bind(switch_instance, 'hoverItemIndex', switch_instance_hoverItemIndex_binding));
     					switch_instance.$on("itemSelected", /*itemSelected*/ ctx[43]);
     					switch_instance.$on("itemCreated", /*itemCreated*/ ctx[44]);
@@ -4993,19 +5029,19 @@ var app = (function () {
     				attr_dev(div, "style", /*containerStyles*/ ctx[11]);
     			}
 
-    			if (dirty[0] & /*containerClasses, hasError*/ 2098176) {
+    			if (!current || dirty[0] & /*containerClasses, hasError*/ 2098176) {
     				toggle_class(div, "hasError", /*hasError*/ ctx[10]);
     			}
 
-    			if (dirty[0] & /*containerClasses, isMulti*/ 2097280) {
+    			if (!current || dirty[0] & /*containerClasses, isMulti*/ 2097280) {
     				toggle_class(div, "multiSelect", /*isMulti*/ ctx[7]);
     			}
 
-    			if (dirty[0] & /*containerClasses, isDisabled*/ 2097664) {
+    			if (!current || dirty[0] & /*containerClasses, isDisabled*/ 2097664) {
     				toggle_class(div, "disabled", /*isDisabled*/ ctx[9]);
     			}
 
-    			if (dirty[0] & /*containerClasses, isFocused*/ 2097154) {
+    			if (!current || dirty[0] & /*containerClasses, isFocused*/ 2097154) {
     				toggle_class(div, "focused", /*isFocused*/ ctx[1]);
     			}
     		},
@@ -5648,7 +5684,7 @@ var app = (function () {
     	];
 
     	Object_1.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$1.warn(`<Select> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$3.warn(`<Select> was created with unknown prop '${key}'`);
     	});
 
     	function input_1_binding($$value) {
@@ -6783,7 +6819,9 @@ var app = (function () {
         return collection.map((element) => getChoice(element, labelKey));
     }
 
-    /* src\components\SelectCategories.svelte generated by Svelte v3.48.0 */
+    /* src\components\SelectCategories.svelte generated by Svelte v3.52.0 */
+
+    const { console: console_1$2 } = globals;
     const file$h = "src\\components\\SelectCategories.svelte";
 
     function create_fragment$k(ctx) {
@@ -6814,9 +6852,9 @@ var app = (function () {
     			t1 = space();
     			create_component(select.$$.fragment);
     			attr_dev(label, "for", "category");
-    			add_location(label, file$h, 19, 4, 592);
+    			add_location(label, file$h, 20, 4, 630);
     			attr_dev(div, "class", "field");
-    			add_location(div, file$h, 18, 0, 567);
+    			add_location(div, file$h, 19, 0, 605);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -6878,12 +6916,24 @@ var app = (function () {
     		$$invalidate(3, categories = (_a = ev === null || ev === void 0 ? void 0 : ev.detail) === null || _a === void 0
     		? void 0
     		: _a.map(c => c.value));
+
+    		console.log({ ev, categories });
     	}
+
+    	$$self.$$.on_mount.push(function () {
+    		if (programme === undefined && !('programme' in $$props || $$self.$$.bound[$$self.$$.props['programme']])) {
+    			console_1$2.warn("<SelectCategories> was created without expected prop 'programme'");
+    		}
+
+    		if (categories === undefined && !('categories' in $$props || $$self.$$.bound[$$self.$$.props['categories']])) {
+    			console_1$2.warn("<SelectCategories> was created without expected prop 'categories'");
+    		}
+    	});
 
     	const writable_props = ['programme', 'categories', 'choices'];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<SelectCategories> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$2.warn(`<SelectCategories> was created with unknown prop '${key}'`);
     	});
 
     	const func = q => getCategories(q, programme).then(mapChoices);
@@ -6937,17 +6987,6 @@ var app = (function () {
     			options,
     			id: create_fragment$k.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*programme*/ ctx[1] === undefined && !('programme' in props)) {
-    			console.warn("<SelectCategories> was created without expected prop 'programme'");
-    		}
-
-    		if (/*categories*/ ctx[3] === undefined && !('categories' in props)) {
-    			console.warn("<SelectCategories> was created without expected prop 'categories'");
-    		}
     	}
 
     	get programme() {
@@ -6975,7 +7014,7 @@ var app = (function () {
     	}
     }
 
-    /* src\components\SelectClient.svelte generated by Svelte v3.48.0 */
+    /* src\components\SelectClient.svelte generated by Svelte v3.52.0 */
     const file$g = "src\\components\\SelectClient.svelte";
 
     function create_fragment$j(ctx) {
@@ -7072,6 +7111,20 @@ var app = (function () {
     		: _a.value);
     	}
 
+    	$$self.$$.on_mount.push(function () {
+    		if (programme === undefined && !('programme' in $$props || $$self.$$.bound[$$self.$$.props['programme']])) {
+    			console.warn("<SelectClient> was created without expected prop 'programme'");
+    		}
+
+    		if (categories === undefined && !('categories' in $$props || $$self.$$.bound[$$self.$$.props['categories']])) {
+    			console.warn("<SelectClient> was created without expected prop 'categories'");
+    		}
+
+    		if (client === undefined && !('client' in $$props || $$self.$$.bound[$$self.$$.props['client']])) {
+    			console.warn("<SelectClient> was created without expected prop 'client'");
+    		}
+    	});
+
     	const writable_props = ['programme', 'categories', 'tutors', 'topics', 'client', 'choices'];
 
     	Object.keys($$props).forEach(key => {
@@ -7146,21 +7199,6 @@ var app = (function () {
     			options,
     			id: create_fragment$j.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*programme*/ ctx[1] === undefined && !('programme' in props)) {
-    			console.warn("<SelectClient> was created without expected prop 'programme'");
-    		}
-
-    		if (/*categories*/ ctx[2] === undefined && !('categories' in props)) {
-    			console.warn("<SelectClient> was created without expected prop 'categories'");
-    		}
-
-    		if (/*client*/ ctx[6] === undefined && !('client' in props)) {
-    			console.warn("<SelectClient> was created without expected prop 'client'");
-    		}
     	}
 
     	get programme() {
@@ -7212,7 +7250,7 @@ var app = (function () {
     	}
     }
 
-    /* src\components\SelectProgramme.svelte generated by Svelte v3.48.0 */
+    /* src\components\SelectProgramme.svelte generated by Svelte v3.52.0 */
     const file$f = "src\\components\\SelectProgramme.svelte";
 
     function create_fragment$i(ctx) {
@@ -7304,6 +7342,12 @@ var app = (function () {
     		$$invalidate(0, choices = await getProgrammes("").then(mapChoices));
     	});
 
+    	$$self.$$.on_mount.push(function () {
+    		if (programme === undefined && !('programme' in $$props || $$self.$$.bound[$$self.$$.props['programme']])) {
+    			console.warn("<SelectProgramme> was created without expected prop 'programme'");
+    		}
+    	});
+
     	const writable_props = ['choices', 'programme'];
 
     	Object.keys($$props).forEach(key => {
@@ -7348,13 +7392,6 @@ var app = (function () {
     			options,
     			id: create_fragment$i.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*programme*/ ctx[2] === undefined && !('programme' in props)) {
-    			console.warn("<SelectProgramme> was created without expected prop 'programme'");
-    		}
     	}
 
     	get choices() {
@@ -7374,7 +7411,7 @@ var app = (function () {
     	}
     }
 
-    /* src\components\SelectSupervisor.svelte generated by Svelte v3.48.0 */
+    /* src\components\SelectSupervisor.svelte generated by Svelte v3.52.0 */
     const file$e = "src\\components\\SelectSupervisor.svelte";
 
     function create_fragment$h(ctx) {
@@ -7478,6 +7515,16 @@ var app = (function () {
     		$$invalidate(1, choices = await getTutors().then(tutors => mapChoices(tutors, el => el.names[0])));
     	}
 
+    	$$self.$$.on_mount.push(function () {
+    		if (programme === undefined && !('programme' in $$props || $$self.$$.bound[$$self.$$.props['programme']])) {
+    			console.warn("<SelectSupervisor> was created without expected prop 'programme'");
+    		}
+
+    		if (categories === undefined && !('categories' in $$props || $$self.$$.bound[$$self.$$.props['categories']])) {
+    			console.warn("<SelectSupervisor> was created without expected prop 'categories'");
+    		}
+    	});
+
     	const writable_props = ['programme', 'categories', 'client', 'topics', 'tutors', 'choices'];
 
     	Object.keys($$props).forEach(key => {
@@ -7565,17 +7612,6 @@ var app = (function () {
     			options,
     			id: create_fragment$h.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*programme*/ ctx[2] === undefined && !('programme' in props)) {
-    			console.warn("<SelectSupervisor> was created without expected prop 'programme'");
-    		}
-
-    		if (/*categories*/ ctx[3] === undefined && !('categories' in props)) {
-    			console.warn("<SelectSupervisor> was created without expected prop 'categories'");
-    		}
     	}
 
     	get programme() {
@@ -7627,7 +7663,9 @@ var app = (function () {
     	}
     }
 
-    /* src\components\SelectTopic.svelte generated by Svelte v3.48.0 */
+    /* src\components\SelectTopic.svelte generated by Svelte v3.52.0 */
+
+    const { console: console_1$1 } = globals;
     const file$d = "src\\components\\SelectTopic.svelte";
 
     function create_fragment$g(ctx) {
@@ -7657,9 +7695,9 @@ var app = (function () {
     			t1 = space();
     			create_component(select.$$.fragment);
     			attr_dev(label, "for", "topics");
-    			add_location(label, file$d, 22, 4, 753);
+    			add_location(label, file$d, 25, 4, 796);
     			attr_dev(div, "class", "field");
-    			add_location(div, file$d, 21, 0, 728);
+    			add_location(div, file$d, 24, 0, 771);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -7725,10 +7763,20 @@ var app = (function () {
     		: _a.map(c => c.value));
     	}
 
+    	$$self.$$.on_mount.push(function () {
+    		if (programme === undefined && !('programme' in $$props || $$self.$$.bound[$$self.$$.props['programme']])) {
+    			console_1$1.warn("<SelectTopic> was created without expected prop 'programme'");
+    		}
+
+    		if (categories === undefined && !('categories' in $$props || $$self.$$.bound[$$self.$$.props['categories']])) {
+    			console_1$1.warn("<SelectTopic> was created without expected prop 'categories'");
+    		}
+    	});
+
     	const writable_props = ['programme', 'categories', 'tutors', 'client', 'topics', 'choices'];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<SelectTopic> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$1.warn(`<SelectTopic> was created with unknown prop '${key}'`);
     	});
 
     	const func = q => getTopics(q, programme, categories, tutors, client);
@@ -7775,6 +7823,12 @@ var app = (function () {
     				updateChoices(programme, categories, tutors, client);
     			}
     		}
+
+    		if ($$self.$$.dirty & /*categories*/ 4) {
+    			{
+    				console.log({ categories });
+    			}
+    		}
     	};
 
     	return [choices, programme, categories, tutors, client, onSelect, topics, func];
@@ -7799,17 +7853,6 @@ var app = (function () {
     			options,
     			id: create_fragment$g.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*programme*/ ctx[1] === undefined && !('programme' in props)) {
-    			console.warn("<SelectTopic> was created without expected prop 'programme'");
-    		}
-
-    		if (/*categories*/ ctx[2] === undefined && !('categories' in props)) {
-    			console.warn("<SelectTopic> was created without expected prop 'categories'");
-    		}
     	}
 
     	get programme() {
@@ -7861,7 +7904,7 @@ var app = (function () {
     	}
     }
 
-    /* src\components\Supervisor.svelte generated by Svelte v3.48.0 */
+    /* src\components\Supervisor.svelte generated by Svelte v3.52.0 */
 
     const { console: console_1 } = globals;
     const file$c = "src\\components\\Supervisor.svelte";
@@ -8098,6 +8141,12 @@ var app = (function () {
     		}
     	}
 
+    	$$self.$$.on_mount.push(function () {
+    		if (label === undefined && !('label' in $$props || $$self.$$.bound[$$self.$$.props['label']])) {
+    			console_1.warn("<Supervisor> was created without expected prop 'label'");
+    		}
+    	});
+
     	const writable_props = ['label'];
 
     	Object.keys($$props).forEach(key => {
@@ -8139,13 +8188,6 @@ var app = (function () {
     			options,
     			id: create_fragment$f.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*label*/ ctx[1] === undefined && !('label' in props)) {
-    			console_1.warn("<Supervisor> was created without expected prop 'label'");
-    		}
     	}
 
     	get label() {
@@ -8157,7 +8199,7 @@ var app = (function () {
     	}
     }
 
-    /* src\components\ExploreSupervisors.svelte generated by Svelte v3.48.0 */
+    /* src\components\ExploreSupervisors.svelte generated by Svelte v3.52.0 */
     const file$b = "src\\components\\ExploreSupervisors.svelte";
 
     function get_each_context$4(ctx, list, i) {
@@ -8334,6 +8376,24 @@ var app = (function () {
     		}
     	];
 
+    	$$self.$$.on_mount.push(function () {
+    		if (programme === undefined && !('programme' in $$props || $$self.$$.bound[$$self.$$.props['programme']])) {
+    			console.warn("<ExploreSupervisors> was created without expected prop 'programme'");
+    		}
+
+    		if (categories === undefined && !('categories' in $$props || $$self.$$.bound[$$self.$$.props['categories']])) {
+    			console.warn("<ExploreSupervisors> was created without expected prop 'categories'");
+    		}
+
+    		if (client === undefined && !('client' in $$props || $$self.$$.bound[$$self.$$.props['client']])) {
+    			console.warn("<ExploreSupervisors> was created without expected prop 'client'");
+    		}
+
+    		if (topics === undefined && !('topics' in $$props || $$self.$$.bound[$$self.$$.props['topics']])) {
+    			console.warn("<ExploreSupervisors> was created without expected prop 'topics'");
+    		}
+    	});
+
     	const writable_props = ['programme', 'categories', 'client', 'topics'];
 
     	Object.keys($$props).forEach(key => {
@@ -8388,25 +8448,6 @@ var app = (function () {
     			options,
     			id: create_fragment$e.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*programme*/ ctx[1] === undefined && !('programme' in props)) {
-    			console.warn("<ExploreSupervisors> was created without expected prop 'programme'");
-    		}
-
-    		if (/*categories*/ ctx[2] === undefined && !('categories' in props)) {
-    			console.warn("<ExploreSupervisors> was created without expected prop 'categories'");
-    		}
-
-    		if (/*client*/ ctx[3] === undefined && !('client' in props)) {
-    			console.warn("<ExploreSupervisors> was created without expected prop 'client'");
-    		}
-
-    		if (/*topics*/ ctx[4] === undefined && !('topics' in props)) {
-    			console.warn("<ExploreSupervisors> was created without expected prop 'topics'");
-    		}
     	}
 
     	get programme() {
@@ -8442,7 +8483,7 @@ var app = (function () {
     	}
     }
 
-    /* src\components\Topic.svelte generated by Svelte v3.48.0 */
+    /* src\components\Topic.svelte generated by Svelte v3.52.0 */
 
     const file$a = "src\\components\\Topic.svelte";
 
@@ -8490,6 +8531,13 @@ var app = (function () {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Topic', slots, []);
     	let { topic } = $$props;
+
+    	$$self.$$.on_mount.push(function () {
+    		if (topic === undefined && !('topic' in $$props || $$self.$$.bound[$$self.$$.props['topic']])) {
+    			console.warn("<Topic> was created without expected prop 'topic'");
+    		}
+    	});
+
     	const writable_props = ['topic'];
 
     	Object.keys($$props).forEach(key => {
@@ -8524,13 +8572,6 @@ var app = (function () {
     			options,
     			id: create_fragment$d.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*topic*/ ctx[0] === undefined && !('topic' in props)) {
-    			console.warn("<Topic> was created without expected prop 'topic'");
-    		}
     	}
 
     	get topic() {
@@ -8542,7 +8583,7 @@ var app = (function () {
     	}
     }
 
-    /* src\components\ExploreTopics.svelte generated by Svelte v3.48.0 */
+    /* src\components\ExploreTopics.svelte generated by Svelte v3.52.0 */
     const file$9 = "src\\components\\ExploreTopics.svelte";
 
     function get_each_context$3(ctx, list, i) {
@@ -8716,6 +8757,24 @@ var app = (function () {
     		$$invalidate(0, topics = await getTopics("", programme, categories, supervisors, client));
     	}
 
+    	$$self.$$.on_mount.push(function () {
+    		if (programme === undefined && !('programme' in $$props || $$self.$$.bound[$$self.$$.props['programme']])) {
+    			console.warn("<ExploreTopics> was created without expected prop 'programme'");
+    		}
+
+    		if (categories === undefined && !('categories' in $$props || $$self.$$.bound[$$self.$$.props['categories']])) {
+    			console.warn("<ExploreTopics> was created without expected prop 'categories'");
+    		}
+
+    		if (client === undefined && !('client' in $$props || $$self.$$.bound[$$self.$$.props['client']])) {
+    			console.warn("<ExploreTopics> was created without expected prop 'client'");
+    		}
+
+    		if (supervisors === undefined && !('supervisors' in $$props || $$self.$$.bound[$$self.$$.props['supervisors']])) {
+    			console.warn("<ExploreTopics> was created without expected prop 'supervisors'");
+    		}
+    	});
+
     	const writable_props = ['programme', 'categories', 'client', 'supervisors'];
 
     	Object.keys($$props).forEach(key => {
@@ -8780,25 +8839,6 @@ var app = (function () {
     			options,
     			id: create_fragment$c.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*programme*/ ctx[1] === undefined && !('programme' in props)) {
-    			console.warn("<ExploreTopics> was created without expected prop 'programme'");
-    		}
-
-    		if (/*categories*/ ctx[2] === undefined && !('categories' in props)) {
-    			console.warn("<ExploreTopics> was created without expected prop 'categories'");
-    		}
-
-    		if (/*client*/ ctx[3] === undefined && !('client' in props)) {
-    			console.warn("<ExploreTopics> was created without expected prop 'client'");
-    		}
-
-    		if (/*supervisors*/ ctx[4] === undefined && !('supervisors' in props)) {
-    			console.warn("<ExploreTopics> was created without expected prop 'supervisors'");
-    		}
     	}
 
     	get programme() {
@@ -8834,9 +8874,9 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\SearchInputHTML.svelte generated by Svelte v3.48.0 */
+    /* ..\node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\SearchInputHTML.svelte generated by Svelte v3.52.0 */
 
-    const file$8 = "node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\SearchInputHTML.svelte";
+    const file$8 = "..\\node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\SearchInputHTML.svelte";
 
     function create_fragment$b(ctx) {
     	let input;
@@ -8920,6 +8960,12 @@ var app = (function () {
     		context.getColumns().redraw();
     	};
 
+    	$$self.$$.on_mount.push(function () {
+    		if (context === undefined && !('context' in $$props || $$self.$$.bound[$$self.$$.props['context']])) {
+    			console.warn("<SearchInputHTML> was created without expected prop 'context'");
+    		}
+    	});
+
     	const writable_props = ['context', 'ref', 'classList'];
 
     	Object.keys($$props).forEach(key => {
@@ -8967,13 +9013,6 @@ var app = (function () {
     			options,
     			id: create_fragment$b.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*context*/ ctx[5] === undefined && !('context' in props)) {
-    			console.warn("<SearchInputHTML> was created without expected prop 'context'");
-    		}
     	}
 
     	get context() {
@@ -9123,7 +9162,7 @@ var app = (function () {
 
     const context = createContext();
 
-    /* node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\SearchInput.svelte generated by Svelte v3.48.0 */
+    /* ..\node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\SearchInput.svelte generated by Svelte v3.52.0 */
 
     // (23:0) {#if context}
     function create_if_block$9(ctx) {
@@ -9346,8 +9385,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\Search.svelte generated by Svelte v3.48.0 */
-    const file$7 = "node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\Search.svelte";
+    /* ..\node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\Search.svelte generated by Svelte v3.52.0 */
+    const file$7 = "..\\node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\Search.svelte";
 
     function create_fragment$9(ctx) {
     	let section;
@@ -9380,7 +9419,7 @@ var app = (function () {
     			if (dirty & /*id*/ 1) searchinput_changes.id = /*id*/ ctx[0];
     			searchinput.$set(searchinput_changes);
 
-    			if (dirty & /*$options*/ 4) {
+    			if (!current || dirty & /*$options*/ 4) {
     				toggle_class(section, "css", /*$options*/ ctx[2].css);
     			}
     		},
@@ -9422,6 +9461,17 @@ var app = (function () {
     	let { options } = $$props;
     	validate_store(options, 'options');
     	$$subscribe_options();
+
+    	$$self.$$.on_mount.push(function () {
+    		if (id === undefined && !('id' in $$props || $$self.$$.bound[$$self.$$.props['id']])) {
+    			console.warn("<Search> was created without expected prop 'id'");
+    		}
+
+    		if (options === undefined && !('options' in $$props || $$self.$$.bound[$$self.$$.props['options']])) {
+    			console.warn("<Search> was created without expected prop 'options'");
+    		}
+    	});
+
     	const writable_props = ['id', 'options'];
 
     	Object.keys($$props).forEach(key => {
@@ -9458,17 +9508,6 @@ var app = (function () {
     			options,
     			id: create_fragment$9.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*id*/ ctx[0] === undefined && !('id' in props)) {
-    			console.warn("<Search> was created without expected prop 'id'");
-    		}
-
-    		if (/*options*/ ctx[1] === undefined && !('options' in props)) {
-    			console.warn("<Search> was created without expected prop 'options'");
-    		}
     	}
 
     	get id() {
@@ -9488,9 +9527,9 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\PaginationRowCountHTML.svelte generated by Svelte v3.48.0 */
+    /* ..\node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\PaginationRowCountHTML.svelte generated by Svelte v3.52.0 */
 
-    const file$6 = "node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\PaginationRowCountHTML.svelte";
+    const file$6 = "..\\node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\PaginationRowCountHTML.svelte";
 
     // (28:1) {:else}
     function create_else_block_1(ctx) {
@@ -9748,6 +9787,13 @@ var app = (function () {
     	const datatableWidth = context.getDatatableWidth();
     	validate_store(datatableWidth, 'datatableWidth');
     	component_subscribe($$self, datatableWidth, value => $$invalidate(7, $datatableWidth = value));
+
+    	$$self.$$.on_mount.push(function () {
+    		if (context === undefined && !('context' in $$props || $$self.$$.bound[$$self.$$.props['context']])) {
+    			console.warn("<PaginationRowCountHTML> was created without expected prop 'context'");
+    		}
+    	});
+
     	const writable_props = ['context', 'ref', 'classList'];
 
     	Object.keys($$props).forEach(key => {
@@ -9840,13 +9886,6 @@ var app = (function () {
     			options,
     			id: create_fragment$8.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*context*/ ctx[12] === undefined && !('context' in props)) {
-    			console.warn("<PaginationRowCountHTML> was created without expected prop 'context'");
-    		}
     	}
 
     	get context() {
@@ -9874,7 +9913,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\PaginationRowCount.svelte generated by Svelte v3.48.0 */
+    /* ..\node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\PaginationRowCount.svelte generated by Svelte v3.52.0 */
 
     // (23:0) {#if context}
     function create_if_block$7(ctx) {
@@ -10097,9 +10136,9 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\PaginationButtonsHTML.svelte generated by Svelte v3.48.0 */
+    /* ..\node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\PaginationButtonsHTML.svelte generated by Svelte v3.52.0 */
 
-    const file$5 = "node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\PaginationButtonsHTML.svelte";
+    const file$5 = "..\\node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\PaginationButtonsHTML.svelte";
 
     function get_each_context$2(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -10724,6 +10763,12 @@ var app = (function () {
     		context.getColumns().redraw();
     	};
 
+    	$$self.$$.on_mount.push(function () {
+    		if (context === undefined && !('context' in $$props || $$self.$$.bound[$$self.$$.props['context']])) {
+    			console.warn("<PaginationButtonsHTML> was created without expected prop 'context'");
+    		}
+    	});
+
     	const writable_props = ['context', 'ref', 'classList'];
 
     	Object.keys($$props).forEach(key => {
@@ -10824,13 +10869,6 @@ var app = (function () {
     			options,
     			id: create_fragment$6.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*context*/ ctx[12] === undefined && !('context' in props)) {
-    			console.warn("<PaginationButtonsHTML> was created without expected prop 'context'");
-    		}
     	}
 
     	get context() {
@@ -10858,7 +10896,7 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\PaginationButtons.svelte generated by Svelte v3.48.0 */
+    /* ..\node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\PaginationButtons.svelte generated by Svelte v3.52.0 */
 
     // (23:0) {#if context}
     function create_if_block$5(ctx) {
@@ -11081,8 +11119,8 @@ var app = (function () {
     	}
     }
 
-    /* node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\Pagination.svelte generated by Svelte v3.48.0 */
-    const file$4 = "node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\Pagination.svelte";
+    /* ..\node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\Pagination.svelte generated by Svelte v3.52.0 */
+    const file$4 = "..\\node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\Pagination.svelte";
 
     // (9:0) {#if $options.pagination && ($options.blocks.paginationRowCount || $options.blocks.paginationButtons)}
     function create_if_block$4(ctx) {
@@ -11170,7 +11208,7 @@ var app = (function () {
     				check_outros();
     			}
 
-    			if (dirty & /*$options*/ 4) {
+    			if (!current || dirty & /*$options*/ 4) {
     				toggle_class(section, "css", /*$options*/ ctx[2].css);
     			}
     		},
@@ -11410,6 +11448,17 @@ var app = (function () {
     	let { options } = $$props;
     	validate_store(options, 'options');
     	$$subscribe_options();
+
+    	$$self.$$.on_mount.push(function () {
+    		if (id === undefined && !('id' in $$props || $$self.$$.bound[$$self.$$.props['id']])) {
+    			console.warn("<Pagination> was created without expected prop 'id'");
+    		}
+
+    		if (options === undefined && !('options' in $$props || $$self.$$.bound[$$self.$$.props['options']])) {
+    			console.warn("<Pagination> was created without expected prop 'options'");
+    		}
+    	});
+
     	const writable_props = ['id', 'options'];
 
     	Object.keys($$props).forEach(key => {
@@ -11452,17 +11501,6 @@ var app = (function () {
     			options,
     			id: create_fragment$4.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*id*/ ctx[0] === undefined && !('id' in props)) {
-    			console.warn("<Pagination> was created without expected prop 'id'");
-    		}
-
-    		if (/*options*/ ctx[1] === undefined && !('options' in props)) {
-    			console.warn("<Pagination> was created without expected prop 'options'");
-    		}
     	}
 
     	get id() {
@@ -11496,8 +11534,8 @@ var app = (function () {
         },
     };
 
-    /* node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\StickyHeader.svelte generated by Svelte v3.48.0 */
-    const file$3 = "node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\StickyHeader.svelte";
+    /* ..\node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\components\StickyHeader.svelte generated by Svelte v3.52.0 */
+    const file$3 = "..\\node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\components\\StickyHeader.svelte";
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
@@ -11913,6 +11951,16 @@ var app = (function () {
     		$$invalidate(2, theadClassList = header.getOrginalTHeadClassList(id));
     	});
 
+    	$$self.$$.on_mount.push(function () {
+    		if (options === undefined && !('options' in $$props || $$self.$$.bound[$$self.$$.props['options']])) {
+    			console.warn("<StickyHeader> was created without expected prop 'options'");
+    		}
+
+    		if (columns === undefined && !('columns' in $$props || $$self.$$.bound[$$self.$$.props['columns']])) {
+    			console.warn("<StickyHeader> was created without expected prop 'columns'");
+    		}
+    	});
+
     	const writable_props = ['id', 'options', 'columns'];
 
     	Object.keys($$props).forEach(key => {
@@ -11973,17 +12021,6 @@ var app = (function () {
     			options,
     			id: create_fragment$3.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*options*/ ctx[0] === undefined && !('options' in props)) {
-    			console.warn("<StickyHeader> was created without expected prop 'options'");
-    		}
-
-    		if (/*columns*/ ctx[1] === undefined && !('columns' in props)) {
-    			console.warn("<StickyHeader> was created without expected prop 'columns'");
-    		}
     	}
 
     	get id() {
@@ -12549,8 +12586,8 @@ var app = (function () {
         }
     }
 
-    /* node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\Datatable.svelte generated by Svelte v3.48.0 */
-    const file$2 = "node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\Datatable.svelte";
+    /* ..\node_modules\.pnpm\svelte-simple-datatables@0.2.3\node_modules\svelte-simple-datatables\src\Datatable.svelte generated by Svelte v3.52.0 */
+    const file$2 = "..\\node_modules\\.pnpm\\svelte-simple-datatables@0.2.3\\node_modules\\svelte-simple-datatables\\src\\Datatable.svelte";
     const get_default_slot_changes = dirty => ({});
     const get_default_slot_context = ctx => ({ rows: /*datatable*/ ctx[3].getRows() });
 
@@ -12858,11 +12895,11 @@ var app = (function () {
     				attr_dev(section, "class", section_class_value);
     			}
 
-    			if (dirty & /*classList, $options*/ 5) {
+    			if (!current || dirty & /*classList, $options*/ 5) {
     				toggle_class(section, "scroll-y", /*$options*/ ctx[2].scrollY);
     			}
 
-    			if (dirty & /*classList, $options*/ 5) {
+    			if (!current || dirty & /*classList, $options*/ 5) {
     				toggle_class(section, "css", /*$options*/ ctx[2].css);
     			}
     		},
@@ -13051,7 +13088,7 @@ var app = (function () {
     	}
     }
 
-    /* src\components\EssayTable.svelte generated by Svelte v3.48.0 */
+    /* src\components\EssayTable.svelte generated by Svelte v3.52.0 */
     const file$1 = "src\\components\\EssayTable.svelte";
 
     function get_each_context(ctx, list, i) {
@@ -13467,6 +13504,28 @@ var app = (function () {
     		$$invalidate(0, essays = await getEssays(programme, categories, topics, tutors, client));
     	}
 
+    	$$self.$$.on_mount.push(function () {
+    		if (programme === undefined && !('programme' in $$props || $$self.$$.bound[$$self.$$.props['programme']])) {
+    			console.warn("<EssayTable> was created without expected prop 'programme'");
+    		}
+
+    		if (categories === undefined && !('categories' in $$props || $$self.$$.bound[$$self.$$.props['categories']])) {
+    			console.warn("<EssayTable> was created without expected prop 'categories'");
+    		}
+
+    		if (client === undefined && !('client' in $$props || $$self.$$.bound[$$self.$$.props['client']])) {
+    			console.warn("<EssayTable> was created without expected prop 'client'");
+    		}
+
+    		if (tutors === undefined && !('tutors' in $$props || $$self.$$.bound[$$self.$$.props['tutors']])) {
+    			console.warn("<EssayTable> was created without expected prop 'tutors'");
+    		}
+
+    		if (topics === undefined && !('topics' in $$props || $$self.$$.bound[$$self.$$.props['topics']])) {
+    			console.warn("<EssayTable> was created without expected prop 'topics'");
+    		}
+    	});
+
     	const writable_props = ['programme', 'categories', 'client', 'tutors', 'topics'];
 
     	Object.keys($$props).forEach(key => {
@@ -13555,29 +13614,6 @@ var app = (function () {
     			options,
     			id: create_fragment$1.name
     		});
-
-    		const { ctx } = this.$$;
-    		const props = options.props || {};
-
-    		if (/*programme*/ ctx[4] === undefined && !('programme' in props)) {
-    			console.warn("<EssayTable> was created without expected prop 'programme'");
-    		}
-
-    		if (/*categories*/ ctx[5] === undefined && !('categories' in props)) {
-    			console.warn("<EssayTable> was created without expected prop 'categories'");
-    		}
-
-    		if (/*client*/ ctx[6] === undefined && !('client' in props)) {
-    			console.warn("<EssayTable> was created without expected prop 'client'");
-    		}
-
-    		if (/*tutors*/ ctx[7] === undefined && !('tutors' in props)) {
-    			console.warn("<EssayTable> was created without expected prop 'tutors'");
-    		}
-
-    		if (/*topics*/ ctx[8] === undefined && !('topics' in props)) {
-    			console.warn("<EssayTable> was created without expected prop 'topics'");
-    		}
     	}
 
     	get programme() {
@@ -13621,7 +13657,7 @@ var app = (function () {
     	}
     }
 
-    /* src\App.svelte generated by Svelte v3.48.0 */
+    /* src\App.svelte generated by Svelte v3.52.0 */
     const file = "src\\App.svelte";
 
     // (28:6) {#if goal}

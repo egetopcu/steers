@@ -15,6 +15,10 @@
     $: {
         updateChoices(programme, categories, tutors, client);
     }
+    
+    $: {
+        console.log({ categories })
+    }
 
     async function updateChoices(programme, categories, tutors, client) {
         choices = await getTopics("", programme, categories, tutors, client).then(mapChoices);

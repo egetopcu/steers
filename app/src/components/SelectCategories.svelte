@@ -11,11 +11,13 @@
     $: {
         updateChoices(programme);
     }
+
     async function updateChoices(programme: string) {
         choices = await getCategories("", programme).then(mapChoices);
     }
     function onSelect(ev) {
         categories = ev?.detail?.map((c) => c.value);
+        console.log({ev, categories})
     }
 </script>
 

@@ -64,7 +64,7 @@ export function filter(
     "WHERE " +
     where_clauses.join(" AND ") +
     "\n" +
-    "RETURN topic, toFloat(count(essay)* count(essay)) / topic.freq AS relevance\n" +
+    "RETURN topic, (toFloat(count(essay)) / topic.freq) * sqrt(topic.freq) AS relevance\n" +
     "ORDER BY relevance DESC, topic.name ASC\n" +
     "LIMIT 100";
 

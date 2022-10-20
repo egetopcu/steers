@@ -24,7 +24,7 @@ export async function filter(
   const query_string = [
     "MATCH (category:Category)--(e:Essay)--(:Programme { id: $programme })",
     "WHERE category.name =~ $filter",
-    "RETURN category, toFloat(count(e) * count(e)) / category.freq AS relevance, count(e) as n, category.freq as f",
+    "RETURN category, (toFloat(count(e)) / category.freq)*sqrt(category.freq) AS relevance, count(e) as n, category.freq as f",
     "ORDER BY relevance DESC, category.name ASC",
   ].join(" ");
 
@@ -35,8 +35,10 @@ export async function filter(
     .then((result) => {
       const categories = result.records.map((record) => {
         return {
-          ... new Category(record.get("category").properties),
+          ...new Category(record.get("category").properties),
           relevance: record.get("relevance"),
+          frequency: record.get("f"),
+          count: record.get("n"),
         };
       });
 
