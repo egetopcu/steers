@@ -1,5 +1,6 @@
 import { CategoryData, IdType } from "@steers/common";
 import { Session } from "neo4j-driver";
+import { buildQuery } from "./utils";
 
 export class Category {
   public id: IdType;
@@ -18,20 +19,41 @@ export const searchableAttributes = ["id", "name", "parent_id"] as const;
 export async function filter(
   session: Session,
   filter: string,
-  programme: number
+  programme: number,
+  categories: number[]
 ) {
   filter = `(?i).*${filter}.*`;
-  const query_string = [
-    "MATCH (category:Category)--(e:Essay)--(:Programme { id: $programme })",
-    "WHERE category.name =~ $filter",
-    "RETURN category, (toFloat(count(e)) / category.freq)*sqrt(category.freq) AS relevance, count(e) as n, category.freq as f",
-    "ORDER BY relevance DESC, category.name ASC",
-  ].join(" ");
 
-  console.log({ query_string, filter, programme });
+  const match = [
+    "(category:Category)--(e:Essay)--(:Programme { id: $programme })",
+  ];
+  const optional_match = [];
+  const where = ["category.name =~ $filter"];
+  const return_ = [
+    "category",
+    "(toFloat(count(e)) / category.freq)*sqrt(category.freq) AS relevance",
+    "count(e) as n",
+    "category.freq as f",
+  ];
+  const order_by = ["relevance DESC, category.name ASC"];
+
+  if (categories?.length) {
+    optional_match.push("(other_category:Category)--(e:Essay)");
+    where.push("other_category.id IN $categories");
+  }
+
+  const query_string = buildQuery({
+    match,
+    where,
+    optional_match,
+    return_,
+    order_by,
+  });
+
+  console.log({ query_string, filter, programme, categories });
 
   return await session
-    .run(query_string, { filter, programme })
+    .run(query_string, { filter, programme, categories })
     .then((result) => {
       const categories = result.records.map((record) => {
         return {

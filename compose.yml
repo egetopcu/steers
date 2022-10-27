@@ -11,3 +11,4 @@ services:
       - ./db/plugins:/plugins
     environment:
       - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+      - NEO4JLABS_PLUGINS=["graph-data-science"]

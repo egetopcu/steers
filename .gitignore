@@ -9,8 +9,7 @@ api/lib/
 # data
 import/
 data/
-db/data/
-db/logs/
+db/**/*
 
 .env
 
