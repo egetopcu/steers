@@ -11,11 +11,11 @@ const API_BASE = "http://localhost:3000";
 
 export async function getCategories(
   filter: string,
-  programme: string
+  programme: ProgrammeData
 ): Promise<CategoryData[]> {
   const url = new URL("categories", API_BASE);
   url.searchParams.set("q", filter);
-  url.searchParams.set("programme", programme);
+  url.searchParams.set("programme", programme.id.toString());
 
   return await fetch(url.toString()).then((result) => result.json());
 }
@@ -62,22 +62,22 @@ export async function getTutors(
 
 export async function getTopics(
   filter: string,
-  programme: string,
-  categories: string[],
-  tutors: string[],
-  client: string
+  programme: ProgrammeData,
+  categories: CategoryData[],
+  tutors: TutorData[],
+  clients: ClientData[]
 ): Promise<TopicData[]> {
   const url = new URL("topics", API_BASE);
   url.searchParams.set("q", filter);
-  url.searchParams.set("programme", programme);
+  url.searchParams.set("programme", programme.id.toString());
   for (const category of categories) {
-    url.searchParams.append("categories", category);
+    url.searchParams.append("categories", category.id.toString());
   }
   for (const tutor of tutors) {
-    url.searchParams.append("tutors", tutor);
+    url.searchParams.append("tutors", tutor.id.toString());
   }
-  if (client) {
-    url.searchParams.set("client", client);
+  for (const client of clients) {
+    url.searchParams.append("client", client.id.toString());
   }
 
   return await fetch(url.toString()).then((result) => result.json());

@@ -17,7 +17,7 @@ export interface CategoryData extends BaseData {
 export interface ClientData extends BaseData {}
 export interface FacultyData extends BaseData {}
 export interface ProgrammeData extends BaseData {
-  code: string;
+  code?: string;
 }
 export interface TopicData extends BaseData {}
 export interface TutorData {

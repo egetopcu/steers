@@ -1,42 +1,45 @@
 <script lang="ts">
-  import { Router, Link, Route } from "svelte-navigator";
-  import { query } from "./stores/query";
-  import Study from "./pages/Study.svelte";
-  import Categories from "./pages/Categories.svelte";
-  import Supervisors from "./pages/Supervisors.svelte";
-  import Hosts from "./pages/Hosts.svelte";
+  import { Router, Route } from "svelte-navigator";
+  import { query, breadcrumbs } from "./stores";
+  import Breadcrumbs from "./components/Breadcrumbs.svelte";
+
+  import Step1 from "./pages/Step-1.svelte";
+  import Step2 from "./pages/Step-2.svelte";
+  import Step3_Topics from "./pages/Step-3_Topics.svelte";
+  import Step3_Hosts from "./pages/Step-3_Hosts.svelte";
+  import Step3_Supervisors from "./pages/Step-3_Supervisors.svelte";
 </script>
 
 <section>
-  <div class="container">
-    <Router>
-      <Route path="/start">
-        <h1>Study</h1>
-        <Study />
+  <Router>
+    <div class="container">
+      <h1 class="title">STEERS</h1>
+      <Breadcrumbs items={$breadcrumbs} />
+      <Route path="/">
+        <h2 class="title is-size-4">Step 1: Select your study programme</h2>
+        <Step1 />
       </Route>
       <Route path="/interests">
-        <h1>Interests (categories)</h1>
-        <Categories />
+        <h2 class="title is-size-4">Step 2: Choose your interests</h2>
+        <Step2 />
       </Route>
       <Route path="/supervisors">
-        <h1>Supervisors</h1>
-        <Supervisors />
+        <h2 class="title is-size-4">Step 3: Find a supervisor</h2>
+        <Step3_Supervisors />
       </Route>
       <Route path="/topics">
-        <h1>Topics</h1>
-        n/a
+        <h2 class="title is-size-4">Step 3: Find a topic</h2>
+        <Step3_Topics />
       </Route>
       <Route path="/hosts">
-        <h1>Hosts (Organizations)</h1>
-        <Hosts />
+        <h2 class="title is-size-4">Step 3: Find a host</h2>
+        <Step3_Hosts />
       </Route>
 
       <footer>
-        <h2>Query</h2>
-        <code style="text-align: left;">
-          <pre>{JSON.stringify($query, null, 2)}</pre>
-        </code>
+        <h2 class="title is-size-4 mt-4 mb-0">Query</h2>
+        <pre><code>{JSON.stringify($query, null, 2)}</code></pre>
       </footer>
-    </Router>
-  </div>
+    </div>
+  </Router>
 </section>

@@ -1,34 +1,46 @@
 <script lang="ts">
-    import Select from "svelte-select";
-    import { getCategories } from "../utils/api";
-    import { mapChoices } from "../utils/helpers";
-    import type { SelectChoices } from "../utils/types";
+  import Select from "svelte-select";
+  import { getCategories } from "../utils/api";
+  import { query } from "../stores";
+  import type { CategoryData, ProgrammeData } from "@steers/common";
 
-    export let programme: string | undefined;
-    export let categories: string[];
-    export let choices: SelectChoices = [];
+  let categories: CategoryData[];
 
-    $: {
-        updateChoices(programme);
+  // set up mapping for select choices to category data
+  const optionIdentifier = "id";
+  const labelIdentifier = "name";
+
+  // update categories when programme selection changes
+  $: updateChoices($query.programme);
+
+  async function updateChoices(programme: ProgrammeData) {
+    if (!programme) {
+      categories = [];
+
+      console.warn("attempted to get categories for NULL programme", {
+        programme,
+      });
+      return;
     }
 
-    async function updateChoices(programme: string) {
-        choices = await getCategories("", programme).then(mapChoices);
-    }
-    function onSelect(ev) {
-        categories = ev?.detail?.map((c) => c.value);
-        console.log({ev, categories})
-    }
+    categories = await getCategories("", programme);
+  }
+
+  function onSelect(ev) {
+    $query.categories = ev?.detail ?? [];
+  }
 </script>
 
-<div class="field">
-    <label for="category">Choose your field(s) of interest</label>
-    <Select
-        id="category"
-        isDisabled={!programme}
-        isMulti
-        items={choices}
-        on:select={onSelect}
-        loadOptions={(q) => getCategories(q, programme).then(mapChoices)}
-    />
+<div>
+  <label for="categories" class="label">Select your interests...</label>
+  <Select
+    id="categories"
+    isDisabled={!$query.programme}
+    isMulti
+    items={categories}
+    value={$query.categories}
+    {optionIdentifier}
+    {labelIdentifier}
+    on:select={onSelect}
+    loadOptions={(q) => getCategories(q, $query.programme)} />
 </div>

@@ -1,44 +1,40 @@
 <script lang="ts">
-    export let goal = undefined;
-    export let enabled: boolean;
+  import { useNavigate } from "svelte-navigator";
+  import { query, breadcrumbs } from "../stores";
+
+  const navigate = useNavigate();
+
+  //   back to step 1 if no programme was selected
+  $: if (!$query.programme) {
+    navigate("/");
+  }
+
+  const nextFunction = (path: string) => {
+    return () => {
+      $breadcrumbs = [
+        ...$breadcrumbs,
+        {
+          path: "/interests",
+          label: $query.categories.map((c) => c.name).join(", "),
+        },
+      ];
+
+      navigate(path);
+    };
+  };
 </script>
 
-<div class="goal-container container">
-    <label for="goal-choices">What are you looking for?</label>
-    <div id="goal-choices" class="choices">
-        <button
-            class="choice"
-            disabled={!enabled}
-            on:click={() => (goal = "supervisor")}
-        >
-            Supervisor(s)
-        </button>
-        <button
-            class="choice"
-            disabled={!enabled}
-            on:click={() => (goal = "topic")}
-        >
-            Topic
-        </button>
-        <button
-            class="choice"
-            disabled={!enabled}
-            on:click={() => (goal = "client")}
-        >
-            Host organization
-        </button>
-    </div>
+<div class="choose-goal">
+  <button
+    on:click={nextFunction("/supervisors")}
+    disabled={$query.categories.length > 0 ? null : true}
+    class="button is-primary">Supervisor</button>
+  <button
+    on:click={nextFunction("/topics")}
+    disabled={$query.categories.length > 0 ? null : true}
+    class="button is-primary">Topic</button>
+  <button
+    on:click={nextFunction("/host")}
+    disabled={$query.categories.length > 0 ? null : true}
+    class="button is-primary">Internship</button>
 </div>
-
-<style lang="less">
-    .choices {
-        display: flex;
-        flex-flow: row nowrap;
-        gap: 1em;
-    }
-    .choice {
-        width: 100%;
-        border-radius: 3px;
-        padding: 1em;
-    }
-</style>
