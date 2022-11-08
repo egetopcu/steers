@@ -1,69 +1,88 @@
 import { CategoryData, IdType } from "@steers/common";
 import { Session } from "neo4j-driver";
-import { buildQuery } from "./utils";
+import { buildClause, buildQuery } from "./utils";
 
 export class Category {
-  public id: IdType;
-  public name: string;
-  public parent_id?: IdType;
+    public id: IdType;
+    public name: string;
+    public parent_id?: IdType;
 
-  constructor(record: CategoryData) {
-    this.id = record.id;
-    this.name = record.name;
-    this.parent_id = record.parent_id;
-  }
+    constructor(record: CategoryData) {
+        this.id = record.id;
+        this.name = record.name;
+        this.parent_id = record.parent_id;
+    }
 }
 
 export const searchableAttributes = ["id", "name", "parent_id"] as const;
 
 export async function filter(
-  session: Session,
-  filter: string,
-  programme: number,
-  categories: number[]
+    session: Session,
+    filter: string,
+    programme: number,
+    categories: number[]
 ) {
-  filter = `(?i).*${filter}.*`;
+    const clauses = [];
+    const return_fields: [string, ...string[]] = [
+        "category",
+        "tf",
+        "df",
+        "relevance",
+    ];
+    clauses.push(
+        buildClause("MATCH", [
+            "(category:Category)--(e:Essay)--(:Programme { id: $programme })",
+        ])
+    );
 
-  const match = [
-    "(category:Category)--(e:Essay)--(:Programme { id: $programme })",
-  ];
-  const optional_match = [];
-  const where = ["category.name =~ $filter"];
-  const return_ = [
-    "category",
-    "(toFloat(count(e)) / category.freq)*sqrt(category.freq) AS relevance",
-    "count(e) as n",
-    "category.freq as f",
-  ];
-  const order_by = ["relevance DESC, category.name ASC"];
+    if (filter) {
+        filter = `(?i).*${filter}.*`;
+        clauses.push(buildClause("WHERE", ["category.name =~ $filter"]));
+    }
 
-  if (categories?.length) {
-    optional_match.push("(other_category:Category)--(e:Essay)");
-    where.push("other_category.id IN $categories");
-  }
+    clauses.push(
+        buildClause("WITH", [
+            "category",
+            "toFloat(count(e)) as tf",
+            "toFloat(category.freq) as df",
+            "toFloat(count(e))/toFloat(category.freq) * sqrt(category.freq) as relevance",
+        ])
+    );
 
-  const query_string = buildQuery({
-    match,
-    where,
-    optional_match,
-    return_,
-    order_by,
-  });
+    if (categories?.length) {
+        clauses.push(
+            buildClause("OPTIONAL MATCH", [
+                "(category)--(e:Essay)--(other:Category)",
+            ]),
+            buildClause("WHERE", ["other.id IN $categories"], " AND "),
+            buildClause("WITH", [
+                ...return_fields,
+                "toFloat(count(distinct(e))) as rf",
+                "toFloat(count(distinct(e)))/df * sqrt((other.freq + category.freq)/2) as similarity",
+            ])
+        );
+        return_fields.push("rf", "similarity");
+    }
 
-  console.log({ query_string, filter, programme, categories });
+    clauses.push(buildClause("RETURN", return_fields));
+    clauses.push(
+        buildClause("ORDER BY", ["relevance DESC", "category.name ASC"])
+    );
+    const query_string = clauses.join(" ");
 
-  return await session
-    .run(query_string, { filter, programme, categories })
-    .then((result) => {
-      const categories = result.records.map((record) => {
-        return {
-          ...new Category(record.get("category").properties),
-          relevance: record.get("relevance"),
-          frequency: record.get("f"),
-          count: record.get("n"),
-        };
-      });
+    console.log({ query_string, filter, programme, categories });
 
-      return categories;
-    });
+    return await session
+        .run(query_string, { filter, programme, categories })
+        .then((result) => {
+            const categories = result.records.map((record) => {
+                const { category, ...properties } = record.toObject();
+                return {
+                    ...new Category(record.get("category").properties),
+                    ...properties,
+                };
+            });
+
+            return categories;
+        });
 }
