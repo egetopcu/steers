@@ -37,8 +37,7 @@ CREATE INDEX topic_index IF NOT EXISTS FOR (topic:Topic) ON (topic.id);
 CREATE TEXT INDEX topic_name_index IF NOT EXISTS FOR (topic:Topic) ON (topic.name);
 :auto USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM "file:///topic.csv" AS row
-MERGE (topic:Topic {id: toInteger(row.id) , name: row.name, freq: toInteger(row.n) })
-SET topic.name = row.name;
+MERGE (topic:Topic {id: toInteger(row.id) , name: row.name, freq: toInteger(row.n) });
 
 CREATE INDEX essay_index IF NOT EXISTS FOR (essay:Essay) ON (essay.id);
 CREATE FULLTEXT INDEX essay_fulltext_index IF NOT EXISTS FOR (essay:Essay) ON EACH [essay.title, essay.summary, essay.summary_en];
@@ -60,12 +59,13 @@ CREATE FULLTEXT INDEX tutor_fulltext_index IF NOT EXISTS FOR (tutor:Tutor) ON EA
 LOAD CSV WITH HEADERS FROM "file:///tutor.csv" AS row
 MERGE (tutor:Tutor {id: toInteger(row.id) })
 SET tutor.name = row.name
-SET tutor.mail = row.contactId;
+SET tutor.mail = row.contactId
+SET tutor.freq = toInteger(row.freq);
 
 :auto USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM "file:///essaytutor.csv" AS row
 MATCH (essay:Essay {id: toInteger(row.essay_id)})
-MATCH (tutor:Tutor {id: toInteger(row.topic_id)})
+MATCH (tutor:Tutor {id: toInteger(row.tutor_id)})
 MERGE (essay)-[:TUTORED_BY]->(tutor);
 
 :auto USING PERIODIC COMMIT 500
