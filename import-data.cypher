@@ -54,6 +54,20 @@ SET essay.summary = CASE trim(row.summary) WHEN "" THEN null ELSE row.summary EN
 SET essay.abstract = CASE trim(row.abstract) WHEN "" THEN null ELSE row.abstract END
 SET essay.summary_en = CASE trim(row.summary_en) WHEN "" THEN null ELSE row.summary_en END;
 
+CREATE INDEX tutor_index IF NOT EXISTS FOR (tutor:Tutor) ON (tutor.id);
+CREATE FULLTEXT INDEX tutor_fulltext_index IF NOT EXISTS FOR (tutor:Tutor) ON EACH [tutor.name];
+:auto USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM "file:///tutor.csv" AS row
+MERGE (tutor:Tutor {id: toInteger(row.id) })
+SET tutor.name = row.name
+SET tutor.mail = row.contactId;
+
+:auto USING PERIODIC COMMIT 500
+LOAD CSV WITH HEADERS FROM "file:///essaytutor.csv" AS row
+MATCH (essay:Essay {id: toInteger(row.essay_id)})
+MATCH (tutor:Tutor {id: toInteger(row.topic_id)})
+MERGE (essay)-[:TUTORED_BY]->(tutor);
+
 :auto USING PERIODIC COMMIT 500
 LOAD CSV WITH HEADERS FROM "file:///essaytopic.csv" AS row
 MATCH (essay:Essay {id: toInteger(row.essay_id)})
