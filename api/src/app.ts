@@ -1,5 +1,6 @@
 import { config } from "dotenv";
 config({ debug: true, path: "../.env" });
+console.log({ server: process.env.NEO4J_URI });
 
 import express, { NextFunction, Request, Response } from "express";
 import morgan from "morgan";
@@ -11,6 +12,7 @@ import * as essay from "./routes/essay";
 import * as programme from "./routes/programme";
 import * as client from "./routes/client";
 import * as topic from "./routes/topic";
+import * as tutor from "./routes/tutor";
 
 const app = express();
 
@@ -19,7 +21,7 @@ app.use(cors());
 app.use(handle_neo4j_session);
 
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("Hello World!!");
 });
 
 app.get("/programmes", programme.filter);
@@ -27,10 +29,7 @@ app.get("/categories", category.filter);
 app.get("/clients", client.filter);
 app.get("/topics", topic.filter);
 app.get("/essays", essay.filter);
-// app.get("/essays/related", essay.getRelated);
-// app.get("/categories/find", category.findMany);
-// app.get("/categories/related", category.getRelated);
-// app.get("/categories/connected/:id", category.getConnected);
+app.get("/tutors", tutor.related);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error({ error: err });

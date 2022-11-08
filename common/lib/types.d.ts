@@ -29,9 +29,9 @@ export interface ProgrammeData extends BaseData {
 }
 export interface TopicData extends BaseData, RelevanceData {}
 export interface TutorData extends RelevanceData {
-    id: IdType;
-    name: string;
-    email?: string;
+  id: IdType;
+  name: string;
+  mail?: string;
 }
 export interface EssayData {
     id: IdType;

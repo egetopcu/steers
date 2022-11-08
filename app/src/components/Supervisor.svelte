@@ -1,56 +1,44 @@
 <script lang="ts">
-    export let label: string;
+  import type { CategoryData, TutorData } from "@steers/common";
+  import { getCategories } from "../utils/api";
+  import Debug from "./Debug.svelte";
 
-    let details: {
-        name: string,
-        displayName: string,
-        givenName: string,
-        jobtitle: string,
-        mail: string,
-        phoneWork: string,
-        profileUrl: string,
-        pictureUrl: string,
-        researchUrl: string,
+  export let supervisor: TutorData;
 
-        organizations: {
-            department: string,
-            section: string
-        }[]
-
-        locations: {
-            location: string
-        }[]
-    } | undefined;
-
-    async function update_people_details(label: string) {
-        let response = await fetch(`https://people.utwente.nl/peoplepagesopenapi/contacts?query=${encodeURIComponent(label)}`)
-        let data = await response.json()
-
-        console.log({data});
-        
-        if (data?.data && data.data.length >= 1) {
-            console.log(data.data[0])
-            details = data.data[0];
-        }
+  let details: any;
+  $: fetchDetails(supervisor);
+  async function fetchDetails(supervisor: TutorData) {
+    let response = await fetch(
+      `https://people.utwente.nl/peoplepagesopenapi/contacts?query=${encodeURIComponent(
+        supervisor.mail
+      )}`
+    );
+    let data = await response.json();
+    if (data?.data && data.data.length >= 1) {
+      details = data.data[0];
     }
+  }
 
-    $: update_people_details(label);
+  let interests: CategoryData[] = [];
+  $: fetchInterests(supervisor);
+  async function fetchInterests(supervisor: TutorData) {
+    interests = await getCategories("", { tutors: [supervisor] });
+  }
 </script>
 
-<div class="person">
-    {#if details}
-        <div class="cards">
-            <div class="photo"><img src={details.pictureUrl} alt={details.name}/></div>
-            <div class="content">
-                <div class="name">{details.name} ({details.givenName})</div>
-                <div class="jobtitle">{details.jobtitle}</div>
-                <div class="contact">
-                    <div class="mail">{details.mail}</div>
-                    <div class="phone">{details.phoneWork}</div>
-                    <div class="profile"><a href={details.profileUrl}>{details.profileUrl}</a></div>
-                    <div class="office">{details.locations.map(l => l.location).join(", ")}</div>
-                </div>
-            </div>
-        </div>
-    {/if}
+<div class="supervisor">
+  <div class="name">
+    {details?.name || supervisor.name} ({details?.givenName})
+  </div>
+  {#if details}
+    <div class="department">
+      {details?.organizations.map((org) => org.organizationId).join(", ")}
+    </div>
+  {/if}
+  {#if supervisor.mail != "NA"}
+    <div class="contact">
+      <a href="mailto:{supervisor.mail}">{supervisor.mail}</a>
+    </div>
+  {/if}
+  <Debug label="details" data={{ supervisor, details }} />
 </div>
