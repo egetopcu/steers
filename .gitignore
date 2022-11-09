@@ -4,7 +4,8 @@ node_modules
 
 # compiled stuff
 api/lib/
-
+common/lib/
+app/public/build/
 
 # data
 import/
