@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Router, Route } from "svelte-navigator";
-    import { query, breadcrumbs } from "./stores";
+    import { query } from "./stores";
     import Breadcrumbs from "./components/Breadcrumbs.svelte";
 
     import Step1 from "./pages/Step-1.svelte";
@@ -9,18 +9,33 @@
     import Step3_Hosts from "./pages/Step-3_Hosts.svelte";
     import Step3_Supervisors from "./pages/Step-3_Supervisors.svelte";
     import Debug from "./components/Debug.svelte";
+    import { view } from "./utils/view";
+
+    const programme = view(query, (q) => q.programme);
+    const categories = view(query, (q) => q.categories);
+    const goal = view(query, (q) => q.goal);
+
+    let breadcrumbs: { path: string; label: string }[] = [];
+    $: breadcrumbs = [
+        $programme ? { path: "/", label: "Study: " + $programme.name } : null,
+        $categories?.length
+            ? {
+                  path: "interests",
+                  label:
+                      "Interests: " + $categories.map((c) => c.name).join(", "),
+              }
+            : null,
+        $goal ? { path: "/" + $goal, label: "Looking for: " + $goal } : null,
+    ].filter((b) => !!b);
 </script>
 
 <section>
     <Router>
         <div class="container">
-            <h1 class="title">STEERS</h1>
-            <Breadcrumbs items={$breadcrumbs} />
+            <a class="title" href="/">STEERS</a>
+            <Breadcrumbs items={breadcrumbs} />
             <div class="flex">
-                <Debug
-                    label="State"
-                    data={{ query: $query, breadcrumbs: $breadcrumbs }}
-                />
+                <Debug label="State" data={{ query: $query, breadcrumbs }} />
             </div>
             <Route path="/">
                 <h2 class="title is-size-4">
@@ -32,15 +47,15 @@
                 <h2 class="title is-size-4">Step 2: Choose your interests</h2>
                 <Step2 />
             </Route>
-            <Route path="/supervisors">
+            <Route path="/supervisor">
                 <h2 class="title is-size-4">Step 3: Find a supervisor</h2>
                 <Step3_Supervisors />
             </Route>
-            <Route path="/topics">
+            <Route path="/topic">
                 <h2 class="title is-size-4">Step 3: Find a topic</h2>
                 <Step3_Topics />
             </Route>
-            <Route path="/hosts">
+            <Route path="/host">
                 <h2 class="title is-size-4">Step 3: Find a host</h2>
                 <Step3_Hosts />
             </Route>
