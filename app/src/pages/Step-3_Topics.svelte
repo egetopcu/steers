@@ -12,7 +12,7 @@
     let loading = false;
 
     //   guard against no interests being selected
-    $: if ($query.categories.length <= 0) {
+    $: if (!$query.categories?.length) {
         navigate("/interests");
     }
 

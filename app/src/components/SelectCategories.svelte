@@ -1,34 +1,30 @@
 <script lang="ts">
     import Select from "svelte-select";
     import { getCategories } from "../utils/api";
-    import { query } from "../stores";
-    import type { CategoryData, ProgrammeData } from "@steers/common";
+    import { IQuery, query } from "../stores";
+    import type { CategoryData } from "@steers/common";
     import Debug from "./Debug.svelte";
+    import { view } from "../utils/view";
 
-    let categories: CategoryData[];
+    let choices: CategoryData[];
+
+    let programme = view(
+        query,
+        ($query) => $query.programme,
+        (a, b) => a?.id === b?.id
+    );
 
     // set up mapping for select choices to category data
     const optionIdentifier = "id";
     const labelIdentifier = "name";
 
-    // update categories when programme selection changes
-    $: updateChoices($query.programme);
+    $: updateChoices({ programme: $programme });
+    async function updateChoices({ programme }: IQuery) {
+        console.log({ programme });
 
-    async function updateChoices(programme: ProgrammeData) {
-        if (!programme) {
-            categories = [];
-
-            console.warn("attempted to get categories for NULL programme", {
-                programme,
-            });
-            return;
-        }
-
-        categories = await getCategories("", programme);
-    }
-
-    function onSelect(ev) {
-        $query.categories = ev?.detail ?? [];
+        choices = await getCategories({
+            required: { programme: programme?.id },
+        });
     }
 </script>
 
@@ -38,16 +34,14 @@
         id="categories"
         isDisabled={!$query.programme}
         isMulti
-        items={categories}
-        value={$query.categories}
+        items={choices}
+        bind:value={$query.categories}
         {optionIdentifier}
         {labelIdentifier}
-        on:select={onSelect}
-        loadOptions={(q) => getCategories(q, $query.programme)}
     />
 
     <Debug
         label="Categories"
-        data={{ selected: $query.categories, options: categories }}
+        data={{ selected: $query.categories, options: choices }}
     />
 </div>
