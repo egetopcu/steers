@@ -1,16 +1,11 @@
 <script lang="ts">
   import { useNavigate } from "svelte-navigator";
   import SelectStudy from "../components/SelectStudy.svelte";
-  import { query, breadcrumbs } from "../stores";
+  import { query } from "../stores";
 
   const navigate = useNavigate();
 
   const onNext = () => {
-    $breadcrumbs = [
-      ...$breadcrumbs,
-      { path: "/", label: $query.programme.name },
-    ];
-
     navigate("/interests");
   };
 </script>

@@ -43,7 +43,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 const PORT = process.env.STEERS_API_PORT
     ? parseInt(process.env.STEERS_API_PORT)
     : 3000;
-const HOST = process.env.STEERS_API_HOST ? process.env.STEERS_API_HOST : "::";
+const HOST = process.env.STEERS_API_HOST ? process.env.STEERS_API_HOST : "0.0.0.0";
 app.listen(PORT, HOST, () => {
-    console.log(`Listening on port ${PORT}`);
+    console.log(`Listening at 'http://${HOST}:${PORT}'`);
 });
