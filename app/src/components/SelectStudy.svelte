@@ -10,7 +10,7 @@
     let programmes: ProgrammeData[];
 
     onMount(async () => {
-        programmes = await getProgrammes({});
+        programmes = await getProgrammes({ sort: "programme.name" });
     });
 </script>
 
