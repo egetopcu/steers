@@ -9,7 +9,8 @@ services:
             - ./db/logs:/logs
             - ./import:/var/lib/neo4j/import
             - ./db/plugins:/plugins
-        environment:
-            # - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
-            # - NEO4JLABS_PLUGINS=["graph-data-science"]
-            - NEO4JLABS_PLUGINS=["apoc"]
+
+        ## first time setup
+        # environment:
+        #     - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+        #     - NEO4JLABS_PLUGINS=["graph-data-science", "apoc"]

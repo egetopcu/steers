@@ -1,17 +1,17 @@
 {
-  "name": "steers",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "dev": "concurrently -n app,api -c blue,green \"cd app && pnpm dev\" \"cd api && pnpm dev\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "concurrently": "^7.4.0",
-    "prettier": "^2.7.1"
-  }
+    "name": "steers",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "dev": "concurrently -n app,api,common -c blue,green,purple \"cd app && pnpm dev\" \"cd api && pnpm dev\" \"cd common && tsc -w\"",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "devDependencies": {
+        "concurrently": "^7.4.0",
+        "prettier": "^2.7.1"
+    }
 }
