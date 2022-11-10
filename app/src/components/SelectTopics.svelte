@@ -3,12 +3,12 @@
     import differenceBy from "lodash/differenceBy";
     import Debug from "./Debug.svelte";
 
-    export let selected: TopicData[];
-    export let topics: TopicData[];
+    export let selected: TopicData[] = [];
+    export let topics: TopicData[] = [];
     export let loading: boolean = false;
 
     let suggestions: TopicData[];
-    $: suggestions = differenceBy(topics, selected, "id");
+    $: suggestions = differenceBy(topics ?? [], selected ?? [], "id");
 
     const toggleTopicFunction = (topic: TopicData) => {
         return (ev) => {
