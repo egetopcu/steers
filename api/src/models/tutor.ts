@@ -16,7 +16,7 @@ export class Tutor {
 
 export async function related(session: Session, query: QueryData) {
     const query_string = buildRelatedQuery("Tutor", query, {
-        required: { where: ["resource.mail <> 'NA'"] },
+        // required: { where: ["resource.mail <> 'NA'"] },
     });
     const query_data = {
         ...query,

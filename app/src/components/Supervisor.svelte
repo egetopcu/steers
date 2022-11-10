@@ -24,6 +24,8 @@
     $: update_related_topics(supervisor, $query);
 
     async function update_people_details(tutor: TutorData) {
+        if (tutor.mail === "NA") return;
+
         let response = await fetch(
             `https://people.utwente.nl/peoplepagesopenapi/contacts?query=${encodeURIComponent(
                 tutor.mail
