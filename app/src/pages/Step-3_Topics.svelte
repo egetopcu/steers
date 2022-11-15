@@ -33,15 +33,15 @@
     const updateTopics = async (filter: string, query: IQuery) => {
         const query_data = {
             filter,
-            required: {
-                programme: query.programme?.id,
-            },
+            required: {},
             optional: {
+                // programme: query.programme?.id,
                 categories: query.categories?.map((cat) => cat.id),
                 topics: query.topics?.map((top) => top.id),
                 tutors: query.tutors?.map((tut) => tut.id),
                 clients: query.clients?.map((cli) => cli.id),
             },
+            sort: "similarity DESC",
         };
 
         try {

@@ -49,6 +49,7 @@ importers:
       '@steers/common': link:..\common
       '@tsconfig/svelte': ^2.0.0
       '@types/lodash': ^4.14.186
+      iconify-icon: ^1.0.1
       less: ^4.1.3
       lodash: ^4.17.21
       rollup: ^2.3.4
@@ -67,6 +68,7 @@ importers:
       typescript: ^4.0.0
     dependencies:
       '@steers/common': link:../common
+      iconify-icon: 1.0.1
       less: 4.1.3
       lodash: 4.17.21
       sirv-cli: 2.0.2
@@ -124,6 +126,10 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.13.10
+    dev: false
+
+  /@iconify/types/2.0.0:
+    resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
     dev: false
 
   /@jridgewell/gen-mapping/0.3.2:
@@ -901,6 +907,12 @@ packages:
       setprototypeof: 1.2.0
       statuses: 2.0.1
       toidentifier: 1.0.1
+    dev: false
+
+  /iconify-icon/1.0.1:
+    resolution: {integrity: sha512-8qXahj8q0fJ1uMkVJ1DujJw35CWBFxUY9UFCzytfItNjcoj+Dz7yUakuXTzaByIc8seQCnw9CuLVzHdw7yEkBQ==}
+    dependencies:
+      '@iconify/types': 2.0.0
     dev: false
 
   /iconv-lite/0.4.24:

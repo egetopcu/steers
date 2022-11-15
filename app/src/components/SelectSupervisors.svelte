@@ -24,14 +24,16 @@
     async function updateChoices(filter: string, query: IQuery) {
         choices = await getTutors({
             filter,
-            required: {},
+            required: {
+                // programme: query.programme?.id,
+            },
             optional: {
-                programme: query.programme?.id,
                 categories: query.categories?.map((c) => c.id),
                 topics: query.topics?.map((t) => t.id),
                 tutors: query.tutors?.map((t) => t.id),
                 clients: query.clients?.map((t) => t.id),
             },
+            sort: "similarity DESC",
         });
     }
 
@@ -57,6 +59,7 @@
             <Supervisor {supervisor} />
         {/each}
     </div>
+    <Paginator bind:page max_page={pages} />
 </div>
 
 <style lang="less">

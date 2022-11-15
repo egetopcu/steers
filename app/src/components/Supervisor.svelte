@@ -144,6 +144,10 @@
 
     <div class="similar-resources">
         <div class="interests tag-list">
+            <iconify-icon
+                icon="ph:books-light"
+                title="interests - relevant research areas for theses supervised by this person"
+            />
             {#if loading.categories}
                 <SkeletalTag /><SkeletalTag /><SkeletalTag />
             {:else}
@@ -153,6 +157,10 @@
             {/if}
         </div>
         <div class="topics tag-list">
+            <iconify-icon
+                icon="ph:puzzle-piece-light"
+                title="topics - relevant topics mentioned in theses supervised by this person"
+            />
             {#if loading.topics}
                 <SkeletalTag /><SkeletalTag /><SkeletalTag />
             {:else}
@@ -162,6 +170,10 @@
             {/if}
         </div>
         <div class="clients tag-list">
+            <iconify-icon
+                icon="ph:buildings-light"
+                title="host organizations - organizations that this supervisor has cooperated with for previous theses."
+            />
             {#if loading.clients}
                 <SkeletalTag /><SkeletalTag /><SkeletalTag />
             {:else}
@@ -177,10 +189,28 @@
     .supervisor {
         padding: 0.5em;
         display: flex;
-        flex-flow: row wrap;
+        flex-flow: row nowrap;
 
         &:nth-child(even) {
             background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .details {
+            flex: calc(min(33%, 250px)) 0 0;
+        }
+
+        .similar-resources {
+            flex: min-content 1 1;
+        }
+
+        .tag-list {
+            display: flex;
+            flex-flow: row wrap;
+            gap: 0.2rem;
+            margin: 0.2rem;
+            align-items: center;
+            align-content: flex-start;
+            justify-content: flex-start;
         }
     }
 </style>

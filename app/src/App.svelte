@@ -11,6 +11,7 @@
     import Step3_Supervisors from "./pages/Step-3_Supervisors.svelte";
     import Breadcrumbs from "./components/utility/Breadcrumbs.svelte";
     import Debug from "./components/utility/Debug.svelte";
+    import "iconify-icon";
 
     const programme = view(query, (q) => q.programme);
     const categories = view(query, (q) => q.categories);

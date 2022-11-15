@@ -23,7 +23,7 @@ app.use(bodyParser.json());
 app.use(handle_neo4j_session);
 
 app.get("/", (req, res) => {
-    res.send("Hello World!");
+    res.send("Hello World!!");
 });
 
 app.all("/programmes", programme.related);

@@ -244,7 +244,8 @@ export function buildRelatedQuery(
                 ...return_fields,
                 "toFloat(count(essay)) as rf",
                 "toFloat(count(essay))/df * log(resource.freq) as similarity",
-            ])
+            ]),
+            buildClause("WHERE", ["similarity > 0"])
         );
         return_fields.push("rf", "similarity");
     }
@@ -264,6 +265,8 @@ export function buildRelatedQuery(
     );
 
     const query_string = clauses.join(" ");
+    // if (resource == "Tutor") {
     console.log({ resource, query, query_string });
+    // }
     return query_string;
 }
