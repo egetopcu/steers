@@ -6,47 +6,51 @@
     import type { TopicData } from "@steers/common";
     import { getTopics } from "../utils/api";
     import SelectTopics from "../components/SelectTopics.svelte";
-    import { view } from "../utils/view";
     import debounce from "lodash/debounce";
 
     const navigate = useNavigate();
     let topics: TopicData[] = [];
     let loading = false;
     let filter = "";
+    let filter_debounced = filter;
 
     //   guard against no interests being selected
     $: if (!$query.categories?.length) {
         navigate("/interests");
     }
 
-    //   update available topics based on user selections
-    $: updateTopics(filter, $query);
-
-    const updateTopics = debounce(
-        async (filter: string, query: IQuery) => {
-            const query_data = {
-                filter,
-                required: {
-                    programme: query.programme?.id,
-                },
-                optional: {
-                    categories: query.categories?.map((cat) => cat.id),
-                    topics: query.topics?.map((top) => top.id),
-                    tutors: query.tutors?.map((tut) => tut.id),
-                    clients: query.clients?.map((cli) => cli.id),
-                },
-            };
-
-            try {
-                loading = true;
-                topics = await getTopics(query_data);
-            } finally {
-                loading = false;
-            }
+    $: debounceFilter(filter);
+    const debounceFilter = debounce(
+        (filter) => {
+            filter_debounced = filter;
         },
-        1000,
-        { leading: false, trailing: true }
+        500,
+        { leading: false, trailing: true, maxWait: 3000 }
     );
+
+    //   update available topics based on user selections
+    $: updateTopics(filter_debounced, $query);
+    const updateTopics = async (filter: string, query: IQuery) => {
+        const query_data = {
+            filter,
+            required: {
+                programme: query.programme?.id,
+            },
+            optional: {
+                categories: query.categories?.map((cat) => cat.id),
+                topics: query.topics?.map((top) => top.id),
+                tutors: query.tutors?.map((tut) => tut.id),
+                clients: query.clients?.map((cli) => cli.id),
+            },
+        };
+
+        try {
+            loading = true;
+            topics = await getTopics(query_data);
+        } finally {
+            loading = false;
+        }
+    };
 </script>
 
 <div class="field">
