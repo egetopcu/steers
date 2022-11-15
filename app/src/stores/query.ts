@@ -43,4 +43,4 @@ const TEST_QUERY: IQuery = {
     clients: [],
 };
 
-export const query = writable<IQuery>(EMPTY_QUERY);
+export const query = writable<IQuery>(TEST_QUERY);

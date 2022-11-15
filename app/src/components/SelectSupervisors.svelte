@@ -1,16 +1,25 @@
 <script lang="ts">
+    import differenceBy from "lodash/differenceBy";
+    import debounce from "lodash/debounce";
+
+    import type { TutorData } from "@steers/common";
     import { getTutors } from "../utils/api";
     import { IQuery, query } from "../stores";
-    import differenceBy from "lodash/differenceBy";
-    import type { TutorData } from "@steers/common";
-    import Supervisor from "./Supervisor.svelte";
-    import { debounce } from "lodash";
 
-    let choices: TutorData[] = [];
+    import Supervisor from "./Supervisor.svelte";
+    import Paginator from "./utility/Paginator.svelte";
+
     let filter: string = "";
+    let page = 1;
+    let choices: TutorData[] = [];
+    let available: TutorData[] = [];
+    $: available = differenceBy(choices, $query.tutors, "id");
 
     let suggestions: TutorData[] = [];
-    $: suggestions = differenceBy(choices, $query.tutors, "id").slice(0, 10);
+    $: suggestions = available.slice((page - 1) * 10, page * 10);
+
+    let pages: number;
+    $: pages = Math.ceil(available.length / 10);
 
     async function updateChoices(filter: string, query: IQuery) {
         choices = await getTutors({
@@ -25,6 +34,7 @@
             },
         });
     }
+
     const debouncedUpdate = debounce(updateChoices, 1000, {
         maxWait: 5000,
         leading: false,
@@ -35,15 +45,18 @@
 </script>
 
 <div class="select-supervisors">
-    <input bind:value={filter} type="text" />
     {#if $query.tutors?.length}
         {#each $query.tutors as supervisor}
             <Supervisor {supervisor} />
         {/each}
     {/if}
-    {#each suggestions as supervisor}
-        <Supervisor {supervisor} />
-    {/each}
+    <input bind:value={filter} type="text" />
+    <Paginator bind:page max_page={pages} />
+    <div class="supervisor-table">
+        {#each suggestions as supervisor}
+            <Supervisor {supervisor} />
+        {/each}
+    </div>
 </div>
 
 <style lang="less">

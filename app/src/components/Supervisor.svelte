@@ -8,7 +8,9 @@
     import { IQuery, query } from "../stores";
     import { getCategories, getClients, getTopics } from "../utils/api";
     import { view } from "../utils/view";
-    import Debug from "./Debug.svelte";
+
+    import Debug from "./utility/Debug.svelte";
+    import SkeletalTag from "./utility/SkeletalTag.svelte";
 
     export let supervisor: TutorData;
     const _query = view(query, ($query) => $query);
@@ -18,74 +20,115 @@
     let related_topics: TopicData[] = [];
     let related_clients: ClientData[] = [];
 
+    let loading = {
+        details: true,
+        categories: true,
+        topics: true,
+        clients: true,
+    };
+
     $: update_people_details(supervisor);
     $: update_related_categories(supervisor, $query);
     $: update_related_clients(supervisor, $query);
     $: update_related_topics(supervisor, $query);
 
     async function update_people_details(tutor: TutorData) {
+        details = undefined;
+        loading.details = true;
         if (tutor.mail === "NA") return;
 
-        let response = await fetch(
-            `https://people.utwente.nl/peoplepagesopenapi/contacts?query=${encodeURIComponent(
-                tutor.mail
-            )}`
-        );
-        let data = await response.json();
-        if (data?.data && data.data.length >= 1) {
-            details = data.data[0];
+        try {
+            let response = await fetch(
+                `https://people.utwente.nl/peoplepagesopenapi/contacts?query=${encodeURIComponent(
+                    tutor.mail
+                )}`
+            );
+            let data = await response.json();
+            if (data?.data && data.data.length >= 1) {
+                details = data.data[0];
+            }
+        } finally {
+            loading.details = false;
         }
     }
 
     async function update_related_categories(tutor: TutorData, query: IQuery) {
-        related_categories = await getCategories({
-            limit: 3,
-            required: {
-                tutors: [tutor.id],
-            },
-            optional: {
-                programme: query.programme?.id,
-                categories: query.categories?.map((c) => c.id),
-            },
-        });
+        related_categories = [];
+        loading.categories = true;
+
+        try {
+            related_categories = await getCategories({
+                limit: 3,
+                required: {
+                    tutors: [tutor.id],
+                },
+                optional: {
+                    programme: query.programme?.id,
+                    categories: query.categories?.map((c) => c.id),
+                },
+            });
+        } finally {
+            loading.categories = false;
+        }
     }
 
     async function update_related_topics(tutor: TutorData, query: IQuery) {
-        related_topics = await getTopics({
-            limit: 3,
-            required: {
-                tutors: [tutor.id],
-            },
-            optional: {
-                programme: query.programme?.id,
-                categories: query.categories?.map((c) => c.id),
-            },
-        });
+        related_topics = [];
+        loading.topics = true;
+
+        try {
+            related_topics = await getTopics({
+                limit: 3,
+                required: {
+                    tutors: [tutor.id],
+                },
+                optional: {
+                    programme: query.programme?.id,
+                    categories: query.categories?.map((c) => c.id),
+                },
+            });
+        } finally {
+            loading.topics = false;
+        }
     }
 
     async function update_related_clients(tutor: TutorData, query: IQuery) {
-        related_clients = await getClients({
-            limit: 3,
-            required: {
-                tutors: [tutor.id],
-            },
-            optional: {
-                programme: query.programme?.id,
-                categories: query.categories?.map((c) => c.id),
-            },
-        });
+        related_clients = [];
+        loading.clients = true;
+
+        try {
+            related_clients = await getClients({
+                limit: 3,
+                required: {
+                    tutors: [tutor.id],
+                },
+                optional: {
+                    programme: query.programme?.id,
+                    categories: query.categories?.map((c) => c.id),
+                },
+            });
+        } finally {
+            loading.clients = false;
+        }
     }
 </script>
 
 <div class="supervisor">
     <div class="details">
         <div class="name">
-            {details?.name || supervisor.name} ({details?.givenName})
+            {details?.name || supervisor.name}{details?.givenName
+                ? " (" + details.givenName + ")"
+                : ""}
         </div>
         <div class="contact">
             {#if supervisor.mail != "NA"}
                 <a href="mailto:{supervisor.mail}">{supervisor.mail}</a>
             {/if}
+        </div>
+        <div class="department">
+            {details?.organizations
+                .map((org) => org.organizationId)
+                .join(", ") ?? ""}
         </div>
         <Debug
             label="details"
@@ -98,38 +141,46 @@
             }}
         />
     </div>
-    <div class="department">
-        {details?.organizations.map((org) => org.organizationId).join(", ")}
-    </div>
 
-    <div class="interests">
-        {#if related_categories?.length}
-            {#each related_categories as interest}
-                <div class="interest">{interest.name}</div>
-            {/each}
-        {/if}
-    </div>
-    <div class="topics">
-        {#if related_topics?.length}
-            {#each related_topics as topic}
-                <div class="topic">{topic.name}</div>
-            {/each}
-        {/if}
-    </div>
-    <div class="clients">
-        {#if related_clients?.length}
-            {#each related_clients as client}
-                <div class="client">{client.name}</div>
-            {/each}
-        {/if}
+    <div class="similar-resources">
+        <div class="interests tag-list">
+            {#if loading.categories}
+                <SkeletalTag /><SkeletalTag /><SkeletalTag />
+            {:else}
+                {#each related_categories as interest}
+                    <div class="interest tag">{interest.name}</div>
+                {/each}
+            {/if}
+        </div>
+        <div class="topics tag-list">
+            {#if loading.topics}
+                <SkeletalTag /><SkeletalTag /><SkeletalTag />
+            {:else}
+                {#each related_topics as topic}
+                    <div class="topic tag">{topic.name}</div>
+                {/each}
+            {/if}
+        </div>
+        <div class="clients tag-list">
+            {#if loading.clients}
+                <SkeletalTag /><SkeletalTag /><SkeletalTag />
+            {:else}
+                {#each related_clients as client}
+                    <div class="client tag">{client.name}</div>
+                {/each}
+            {/if}
+        </div>
     </div>
 </div>
 
-<style>
+<style lang="less">
     .supervisor {
-        display: grid;
+        padding: 0.5em;
+        display: flex;
+        flex-flow: row wrap;
 
-        grid-template-rows: min-content;
-        grid-template-columns: 4fr 1fr repeat(3, 3fr);
+        &:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
     }
 </style>
