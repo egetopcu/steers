@@ -23,7 +23,7 @@ app.use(bodyParser.json());
 app.use(handle_neo4j_session);
 
 app.get("/", (req, res) => {
-    res.send("Hello World!!");
+    res.send("Hello World!");
 });
 
 app.all("/programmes", programme.related);
@@ -43,7 +43,9 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 const PORT = process.env.STEERS_API_PORT
     ? parseInt(process.env.STEERS_API_PORT)
     : 3000;
-const HOST = process.env.STEERS_API_HOST ? process.env.STEERS_API_HOST : "0.0.0.0";
+const HOST = process.env.STEERS_API_HOST
+    ? process.env.STEERS_API_HOST
+    : "0.0.0.0";
 app.listen(PORT, HOST, () => {
     console.log(`Listening at 'http://${HOST}:${PORT}'`);
 });

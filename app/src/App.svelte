@@ -1,15 +1,16 @@
 <script lang="ts">
     import { Router, Route } from "svelte-navigator";
+
     import { query } from "./stores";
-    import Breadcrumbs from "./components/Breadcrumbs.svelte";
+    import { view } from "./utils/view";
 
     import Step1 from "./pages/Step-1.svelte";
     import Step2 from "./pages/Step-2.svelte";
     import Step3_Topics from "./pages/Step-3_Topics.svelte";
     import Step3_Hosts from "./pages/Step-3_Hosts.svelte";
     import Step3_Supervisors from "./pages/Step-3_Supervisors.svelte";
-    import Debug from "./components/Debug.svelte";
-    import { view } from "./utils/view";
+    import Breadcrumbs from "./components/utility/Breadcrumbs.svelte";
+    import Debug from "./components/utility/Debug.svelte";
 
     const programme = view(query, (q) => q.programme);
     const categories = view(query, (q) => q.categories);

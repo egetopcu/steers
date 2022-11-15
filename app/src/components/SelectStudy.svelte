@@ -1,9 +1,10 @@
 <script lang="ts">
     import Select from "svelte-select";
-    import { getProgrammes } from "../utils/api";
-    import type { ProgrammeData } from "@steers/common";
-    import { query } from "../stores";
     import { onMount } from "svelte";
+
+    import type { ProgrammeData } from "@steers/common";
+    import { getProgrammes } from "../utils/api";
+    import { query } from "../stores";
 
     const optionIdentifier = "id";
     const labelIdentifier = "name";

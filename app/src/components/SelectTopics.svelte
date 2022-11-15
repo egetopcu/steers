@@ -1,7 +1,9 @@
 <script lang="ts">
-    import type { TopicData } from "@steers/common";
     import differenceBy from "lodash/differenceBy";
-    import Debug from "./Debug.svelte";
+
+    import type { TopicData } from "@steers/common";
+
+    import Debug from "./utility/Debug.svelte";
 
     export let selected: TopicData[] = [];
     export let topics: TopicData[] = [];

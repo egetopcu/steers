@@ -1,9 +1,10 @@
 <script lang="ts">
+    import type { CategoryData, ProgrammeData } from "@steers/common";
     import { query } from "../stores";
     import { getCategories } from "../utils/api";
-    import type { CategoryData, ProgrammeData } from "@steers/common";
-    import Debug from "./Debug.svelte";
     import { view } from "../utils/view";
+
+    import Debug from "./utility/Debug.svelte";
 
     let choices: CategoryData[] = [];
     let loading: boolean = false;

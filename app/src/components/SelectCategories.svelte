@@ -1,10 +1,12 @@
 <script lang="ts">
     import Select from "svelte-select";
+
+    import type { CategoryData } from "@steers/common";
     import { getCategories } from "../utils/api";
     import { IQuery, query } from "../stores";
-    import type { CategoryData } from "@steers/common";
-    import Debug from "./Debug.svelte";
     import { view } from "../utils/view";
+
+    import Debug from "./utility/Debug.svelte";
 
     let choices: CategoryData[];
 

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { useNavigate } from "svelte-navigator";
+
     import { query, IQuery } from "../stores";
     import { view } from "../utils/view";
 
