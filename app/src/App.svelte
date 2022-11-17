@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Router, Route } from "svelte-navigator";
 
-    import { query } from "./stores";
+    import { query, debug } from "./stores";
     import { view } from "./utils/view";
 
     import Step1 from "./pages/Step-1.svelte";
@@ -30,6 +30,14 @@
         $goal ? { path: "/" + $goal, label: "Looking for: " + $goal } : null,
     ].filter((b) => !!b);
 </script>
+
+<div id="toggle-debug">
+    <button
+        class="button"
+        on:click={() => ($debug = !$debug)}
+        class:is-danger={$debug}><iconify-icon icon="mdi:bug" /></button
+    >
+</div>
 
 <section>
     <Router>
@@ -64,3 +72,11 @@
         </div>
     </Router>
 </section>
+
+<style>
+    #toggle-debug {
+        position: fixed;
+        top: 1em;
+        right: 1em;
+    }
+</style>
