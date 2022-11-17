@@ -1,24 +1,93 @@
 <script lang="ts">
-  import type { ClientData } from "@steers/common";
-  import Select from "svelte-select";
+    import differenceBy from "lodash/differenceBy";
+    import debounce from "lodash/debounce";
 
-  const optionIdentifier = "id";
-  const labelIdentifier = "name";
+    import type { ClientData } from "@steers/common";
+    import { getClients } from "../utils/api";
+    import { IQuery, query } from "../stores";
 
-  export let hosts: ClientData[];
-  export let selected: ClientData[] = [];
-  export let filter: string = "";
+    import Paginator from "./utility/Paginator.svelte";
+    import Client from "./Client.svelte";
+    import StarButton from "./StarButton.svelte";
 
-  const onSelect = (ev) => {
-    selected = ev.details;
-  };
+    let filter: string = "";
+    let page = 1;
+    let choices: ClientData[] = [];
+    let available: ClientData[] = [];
+    $: available = differenceBy(choices, $query.clients, "id");
+
+    let suggestions: ClientData[] = [];
+    $: suggestions = available.slice((page - 1) * 10, page * 10);
+
+    let pages: number;
+    $: pages = Math.ceil(available.length / 10);
+
+    async function updateChoices(filter: string, query: IQuery) {
+        choices = await getClients({
+            filter,
+            required: {
+                // programme: query.programme?.id,
+            },
+            optional: {
+                categories: query.categories?.map((c) => c.id),
+                topics: query.topics?.map((t) => t.id),
+                tutors: query.tutors?.map((t) => t.id),
+                clients: query.clients?.map((t) => t.id),
+            },
+            sort: "similarity DESC",
+        });
+    }
+
+    const debouncedUpdate = debounce(updateChoices, 1000, {
+        maxWait: 5000,
+        leading: false,
+        trailing: true,
+    });
+    $: debouncedUpdate(filter, $query);
+
+    function addClient(client: ClientData) {
+        $query.clients = [...$query.clients, client];
+    }
+
+    function removeClient(client: ClientData) {
+        $query.clients = $query.clients.filter(
+            (_client) => _client.id !== client.id
+        );
+    }
 </script>
 
-<code>{JSON.stringify({ filter })}</code>
-<Select
-  items={hosts}
-  value={selected}
-  {optionIdentifier}
-  {labelIdentifier}
-  bind:filterText={filter}
-  on:select={onSelect} />
+<div class="select-clients">
+    {#if $query.clients?.length}
+        {#each $query.clients as client}
+            <Client {client}>
+                <StarButton
+                    slot="details-extra"
+                    label="Remove from search"
+                    on:click={() => removeClient(client)}
+                    active={true}
+                />
+            </Client>
+        {/each}
+    {/if}
+    <input bind:value={filter} type="text" />
+    <Paginator bind:page max_page={pages} />
+    <div class="client-table">
+        {#each suggestions as client}
+            <Client {client}>
+                <StarButton
+                    slot="details-extra"
+                    label="Add to search"
+                    on:click={() => addClient(client)}
+                />
+            </Client>
+        {/each}
+    </div>
+    <Paginator bind:page max_page={pages} />
+</div>
+
+<style lang="less">
+    .select-clients {
+        display: flex;
+        flex-flow: column;
+    }
+</style>
