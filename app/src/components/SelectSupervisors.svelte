@@ -8,6 +8,7 @@
 
     import Supervisor from "./Supervisor.svelte";
     import Paginator from "./utility/Paginator.svelte";
+    import StarButton from "./StarButton.svelte";
 
     let filter: string = "";
     let page = 1;
@@ -42,21 +43,43 @@
         leading: false,
         trailing: true,
     });
-
     $: debouncedUpdate(filter, $query);
+
+    function addTutor(tutor: TutorData) {
+        $query.tutors = [...$query.tutors, tutor];
+    }
+
+    function removeTutor(tutor: TutorData) {
+        $query.tutors = $query.tutors.filter(
+            (_tutor) => _tutor.id !== tutor.id
+        );
+    }
 </script>
 
 <div class="select-supervisors">
     {#if $query.tutors?.length}
         {#each $query.tutors as supervisor}
-            <Supervisor {supervisor} />
+            <Supervisor {supervisor}>
+                <StarButton
+                    slot="details-extra"
+                    label="Remove from search"
+                    on:click={() => removeTutor(supervisor)}
+                    active={true}
+                />
+            </Supervisor>
         {/each}
     {/if}
     <input bind:value={filter} type="text" />
     <Paginator bind:page max_page={pages} />
     <div class="supervisor-table">
         {#each suggestions as supervisor}
-            <Supervisor {supervisor} />
+            <Supervisor {supervisor}>
+                <StarButton
+                    slot="details-extra"
+                    label="Add to search"
+                    on:click={() => addTutor(supervisor)}
+                />
+            </Supervisor>
         {/each}
     </div>
     <Paginator bind:page max_page={pages} />

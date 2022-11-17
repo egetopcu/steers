@@ -130,6 +130,7 @@
                 .map((org) => org.organizationId)
                 .join(", ") ?? ""}
         </div>
+        <slot name="details-extra" />
         <Debug
             label="details"
             data={{
