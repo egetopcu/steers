@@ -11,6 +11,7 @@
     import Step3_Supervisors from "./pages/Step-3_Supervisors.svelte";
     import Breadcrumbs from "./components/utility/Breadcrumbs.svelte";
     import Debug from "./components/utility/Debug.svelte";
+    import Navigation from "./components/Navigation.svelte";
     import "iconify-icon";
 
     const programme = view(query, (q) => q.programme);
@@ -44,6 +45,7 @@
         <div class="container">
             <a class="title" href="/">STEERS</a>
             <Breadcrumbs items={breadcrumbs} />
+            <Navigation />
             <div class="flex">
                 <Debug label="State" data={{ query: $query, breadcrumbs }} />
             </div>
