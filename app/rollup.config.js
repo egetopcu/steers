@@ -43,7 +43,13 @@ export default {
 			preprocess: sveltePreprocess({ sourceMap: !production }),
 			compilerOptions: {
 				// enable run-time checks when not in production
-				dev: !production
+				dev: !production,
+
+			},
+			onwarn: (warning, handler) => {
+				// ignore warnings raised in dependencies
+				if (warning["filename"]?.includes("\\node_modules\\")) return;
+				handler(warning);
 			}
 		}),
 		// we'll extract any component CSS out into
