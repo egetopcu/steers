@@ -106,6 +106,7 @@ importers:
   ingest:
     specifiers:
       '@google-cloud/language': ^5.1.2
+      '@steers/common': workspace:^1.0.0
       '@types/node': ^18.11.18
       dotenv: ^16.0.3
       neo4j-driver: ^5.4.0
@@ -113,6 +114,7 @@ importers:
       typescript: ^4.9.4
     dependencies:
       '@google-cloud/language': 5.1.2
+      '@steers/common': link:../common
       '@types/node': 18.11.18
       dotenv: 16.0.3
       neo4j-driver: 5.4.0
