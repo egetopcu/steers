@@ -1,35 +1,15 @@
 <script lang="ts">
     import { Router, Route } from "svelte-navigator";
-
     import { query, debug } from "./stores";
-    import { view } from "./utils/view";
 
     import Step1 from "./pages/Step-1.svelte";
     import Step2 from "./pages/Step-2.svelte";
     import Step3_Topics from "./pages/Step-3_Topics.svelte";
     import Step3_Hosts from "./pages/Step-3_Hosts.svelte";
     import Step3_Supervisors from "./pages/Step-3_Supervisors.svelte";
-    import Breadcrumbs from "./components/utility/Breadcrumbs.svelte";
     import Debug from "./components/utility/Debug.svelte";
     import Navigation from "./components/Navigation.svelte";
     import "iconify-icon";
-
-    const programme = view(query, (q) => q.programme);
-    const categories = view(query, (q) => q.categories);
-    const goal = view(query, (q) => q.goal);
-
-    let breadcrumbs: { path: string; label: string }[] = [];
-    $: breadcrumbs = [
-        $programme ? { path: "/", label: "Study: " + $programme.name } : null,
-        $categories?.length
-            ? {
-                  path: "interests",
-                  label:
-                      "Interests: " + $categories.map((c) => c.name).join(", "),
-              }
-            : null,
-        $goal ? { path: "/" + $goal, label: "Looking for: " + $goal } : null,
-    ].filter((b) => !!b);
 </script>
 
 <div id="toggle-debug">
@@ -44,10 +24,10 @@
     <Router>
         <div class="container">
             <a class="title" href="/">STEERS</a>
-            <Breadcrumbs items={breadcrumbs} />
+            <!-- <Breadcrumbs items={breadcrumbs} /> -->
             <Navigation />
             <div class="flex">
-                <Debug label="State" data={{ query: $query, breadcrumbs }} />
+                <Debug label="State" data={{ query: $query }} />
             </div>
             <Route path="/">
                 <h2 class="title is-size-4">
