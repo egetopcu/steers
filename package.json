@@ -5,6 +5,12 @@
     "main": "index.js",
     "scripts": {
         "dev": "concurrently -n app,api,common -c blue,green,purple \"cd app && pnpm dev\" \"cd api && pnpm dev\" \"cd common && tsc -w\"",
+        "build": "pnpm build:app && pnpm build:api",
+        "build:app": "pushd app && pnpm build",
+        "build:api": "pushd api && pnpm build",
+        "deploy": "pnpm deploy:app && pnpm deploy:api",
+        "deploy:app": "pm2 restart steers-app",
+        "deploy:api": "pm2 restart steers-api",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [],
