@@ -1,0 +1,23 @@
+{
+    "name": "ingest",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@google-cloud/language": "^5.1.2",
+        "@steers/common": "workspace:^1.0.0",
+        "@types/node": "^18.11.18",
+        "dotenv": "^16.0.3",
+        "neo4j-driver": "^5.4.0",
+        "node-fetch": "^3.3.0"
+    },
+    "devDependencies": {
+        "typescript": "^4.9.4"
+    }
+}
