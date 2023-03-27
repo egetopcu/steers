@@ -46,7 +46,7 @@
     $: debouncedUpdate(filter, $query);
 
     function addTutor(tutor: TutorData) {
-        $query.tutors = [...$query.tutors, tutor];
+        $query.tutors = [...($query.tutors ?? []), tutor];
     }
 
     function removeTutor(tutor: TutorData) {

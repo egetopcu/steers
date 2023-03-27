@@ -46,7 +46,7 @@
     $: debouncedUpdate(filter, $query);
 
     function addClient(client: ClientData) {
-        $query.clients = [...$query.clients, client];
+        $query.clients = [...($query.clients ?? []), client];
     }
 
     function removeClient(client: ClientData) {

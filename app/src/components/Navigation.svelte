@@ -7,8 +7,11 @@
 </script>
 
 <nav class="navigation">
-    <div
+    <a
+        tabindex="0"
+        href={null}
         class="step step-1"
+        class:active={$location.pathname == "/"}
         on:click={() => navigate("/")}
         on:keydown={() => navigate("/")}
     >
@@ -16,10 +19,13 @@
         {#if $query.programme}
             <div class="tag is-primary is-small">{$query.programme.name}</div>
         {/if}
-    </div>
-    <div
+    </a>
+    <a
+        tabindex="0"
+        href={null}
         class="step step-2"
         class:disabled={!$query.programme}
+        class:active={$location.pathname == "/interests"}
         on:click={$query.programme ? () => navigate("/interests") : null}
         on:keydown={$query.programme ? () => navigate("/interests") : null}
     >
@@ -31,14 +37,17 @@
                 {/each}
             </div>
         {/if}
-    </div>
+    </a>
     <!-- <div class="step step-3" class:disabled={!$query.categories?.length}>
         <div class="step-header">Find your match</div>
     </div> -->
     <div class="step-4-container">
-        <div
+        <a
+            tabindex="0"
+            href={null}
             class="substep step-4-tutors"
             class:disabled={!$query.categories?.length}
+            class:active={$location.pathname == "/supervisor"}
             on:click={!!$query.categories?.length
                 ? () => navigate("/supervisor")
                 : null}
@@ -47,10 +56,22 @@
                 : null}
         >
             <div class="step-header">Supervisors</div>
-        </div>
-        <div
+            {#if $query.tutors}
+                <div class="tags">
+                    {#each $query.tutors as tutor}
+                        <div class="tag is-primary is-small">
+                            {tutor.name}
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+        </a>
+        <a
+            tabindex="0"
+            href={null}
             class="substep step-4-topics"
             class:disabled={!$query.categories?.length}
+            class:active={$location.pathname == "/topic"}
             on:click={!!$query.categories?.length
                 ? () => navigate("/topic")
                 : null}
@@ -59,10 +80,22 @@
                 : null}
         >
             <div class="step-header">Topics</div>
-        </div>
-        <div
+            {#if $query.topics}
+                <div class="tags">
+                    {#each $query.topics as topic}
+                        <div class="tag is-primary is-small">
+                            {topic.name}
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+        </a>
+        <a
+            tabindex="0"
+            href={null}
             class="substep step-4-hosts"
             class:disabled={!$query.categories?.length}
+            class:active={$location.pathname == "/host"}
             on:click={!!$query.categories?.length
                 ? () => navigate("/host")
                 : null}
@@ -71,7 +104,17 @@
                 : null}
         >
             <div class="step-header">Host organizations</div>
-        </div>
+
+            {#if $query.clients}
+                <div class="tags">
+                    {#each $query.clients as client}
+                        <div class="tag is-primary is-small">
+                            {client.name}
+                        </div>
+                    {/each}
+                </div>
+            {/if}
+        </a>
     </div>
 </nav>
 
@@ -129,11 +172,17 @@
         }
 
         &.active {
-            filter: brightness(1.2);
+            filter: brightness(1.1);
         }
 
         &:not(.disabled):not(.active) {
             cursor: pointer;
+
+            &:focus-within,
+            &:active,
+            &:hover {
+                filter: brightness(1.1);
+            }
         }
     }
 
@@ -162,8 +211,9 @@
     }
 
     .step-1,
-    .step-2,
-    .step-3 {
+    .step-2 //,
+    // .step-3
+    {
         &::after {
             content: "";
             position: absolute;
@@ -187,7 +237,7 @@
         }
     }
     .step-2,
-    .step-3,
+    // .step-3,
     .step-4-topics {
         &::before {
             content: "";
