@@ -30,25 +30,25 @@
                 <Debug label="State" data={{ query: $query }} />
             </div>
             <Route path="/">
-                <h2 class="title is-size-4">
+                <!-- <h2 class="title is-size-4">
                     Step 1: Select your study programme
-                </h2>
+                </h2> -->
                 <Step1 />
             </Route>
             <Route path="/interests">
-                <h2 class="title is-size-4">Step 2: Choose your interests</h2>
+                <!-- <h2 class="title is-size-4">Step 2: Choose your interests</h2> -->
                 <Step2 />
             </Route>
             <Route path="/supervisor">
-                <h2 class="title is-size-4">Step 3: Find a supervisor</h2>
+                <!-- <h2 class="title is-size-4">Step 3: Find a supervisor</h2> -->
                 <Step3_Supervisors />
             </Route>
             <Route path="/topic">
-                <h2 class="title is-size-4">Step 3: Find a topic</h2>
+                <!-- <h2 class="title is-size-4">Step 3: Find a topic</h2> -->
                 <Step3_Topics />
             </Route>
             <Route path="/host">
-                <h2 class="title is-size-4">Step 3: Find a host</h2>
+                <!-- <h2 class="title is-size-4">Step 3: Find a host</h2> -->
                 <Step3_Hosts />
             </Route>
         </div>
