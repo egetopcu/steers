@@ -6,90 +6,91 @@ import { Faculty } from "./faculty";
 import { Programme } from "./programme";
 import { Topic } from "./topic";
 import { Tutor } from "./tutor";
+import { IdType } from "../../../common/src/types";
 
 import {
-  Node,
-  EssayData,
-  FacultyData,
-  ProgrammeData,
-  TutorData,
-  TopicData,
-  CategoryData,
-  ClientData,
+    Node,
+    EssayData,
+    FacultyData,
+    ProgrammeData,
+    TutorData,
+    TopicData,
+    CategoryData,
+    ClientData,
 } from "@steers/common";
 
 export type EssayRecord = Record<{
-  essay: Node<EssayData>;
-  faculty?: Node<FacultyData>;
-  programme?: Node<ProgrammeData>;
-  tutors?: Node<TutorData>[];
-  topics?: Node<TopicData>[];
-  categories?: Node<CategoryData>[];
-  client?: Node<ClientData>;
+    essay: Node<EssayData>;
+    faculty?: Node<FacultyData>;
+    programme?: Node<ProgrammeData>;
+    tutors?: Node<TutorData>[];
+    topics?: Node<TopicData>[];
+    categories?: Node<CategoryData>[];
+    client?: Node<ClientData>;
 }>;
 
 export class Essay implements EssayData {
-  public id: number;
-  public title: string;
-  public author: string;
-  public date: Date;
-  public type: string;
-  public language?: string;
-  public abstract?: string;
-  public summary_en?: string;
-  public restricted: boolean = false;
-  public scraped_watson: boolean = false;
-  public scraped_meaningcloud: boolean = false;
-  public faculty?: Faculty;
-  public programme?: Programme;
-  public topics?: Topic[];
-  public categories?: Category[];
-  public tutors?: Tutor[];
-  public client?: Client;
+    public id: IdType;
+    public title: string;
+    public author: string;
+    public date: Date;
+    public type: string;
+    public language?: string;
+    public abstract?: string;
+    public summary_en?: string;
+    public restricted: boolean = false;
+    public scraped_watson: boolean = false;
+    public scraped_meaningcloud: boolean = false;
+    public faculty?: Faculty;
+    public programme?: Programme;
+    public topics?: Topic[];
+    public categories?: Category[];
+    public tutors?: Tutor[];
+    public client?: Client;
 
-  constructor(record: EssayRecord) {
-    const essay = record.get("essay").properties;
+    constructor(record: EssayRecord) {
+        const essay = record.get("essay").properties;
 
-    this.id = essay.id;
-    this.title = essay.title;
-    this.author = essay.author;
-    this.date = essay.date;
-    this.type = essay.type;
-    this.language = essay.language;
-    this.abstract = essay.abstract;
-    this.summary_en = essay.summary_en;
-    this.restricted = essay.restricted;
+        this.id = essay.id;
+        this.title = essay.title;
+        this.author = essay.author;
+        this.date = essay.date;
+        this.type = essay.type;
+        this.language = essay.language;
+        this.abstract = essay.abstract;
+        this.summary_en = essay.summary_en;
+        this.restricted = essay.restricted;
 
-    if (record.has("faculty") && record.get("faculty")) {
-      this.faculty = new Faculty(record.get("faculty")!.properties);
+        if (record.has("faculty") && record.get("faculty")) {
+            this.faculty = new Faculty(record.get("faculty")!.properties);
+        }
+
+        if (record.has("programme") && record.get("programme")) {
+            this.programme = new Programme(record.get("programme")!.properties);
+        }
+
+        if (record.has("client") && record.get("client")) {
+            this.client = new Client(record.get("client")!.properties);
+        }
+
+        if (record.has("topics")) {
+            this.topics = record
+                .get("topics")!
+                .map((topic) => new Topic(topic.properties));
+        }
+
+        if (record.has("categories")) {
+            this.categories = record
+                .get("categories")!
+                .map((category) => new Category(category.properties));
+        }
+
+        if (record.has("tutors")) {
+            this.tutors = record
+                .get("tutors")!
+                .map((tutor) => new Tutor(tutor.properties));
+        }
     }
-
-    if (record.has("programme") && record.get("programme")) {
-      this.programme = new Programme(record.get("programme")!.properties);
-    }
-
-    if (record.has("client") && record.get("client")) {
-      this.client = new Client(record.get("client")!.properties);
-    }
-
-    if (record.has("topics")) {
-      this.topics = record
-        .get("topics")!
-        .map((topic) => new Topic(topic.properties));
-    }
-
-    if (record.has("categories")) {
-      this.categories = record
-        .get("categories")!
-        .map((category) => new Category(category.properties));
-    }
-
-    if (record.has("tutors")) {
-      this.tutors = record
-        .get("tutors")!
-        .map((tutor) => new Tutor(tutor.properties));
-    }
-  }
 }
 
 export async function filter(
