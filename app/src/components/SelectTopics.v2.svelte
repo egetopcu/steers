@@ -9,7 +9,10 @@
     import Paginator from "./utility/Paginator.svelte";
     import Topic from "./Topic.svelte";
     import StarButton from "./StarButton.svelte";
+    import Loading from "./utility/Loading.svelte";
+    import NoResults from "./utility/NoResults.svelte";
 
+    let loading = true;
     let filter: string = "";
     let page = 1;
     let choices: TopicData[] = [];
@@ -23,6 +26,7 @@
     $: pages = Math.ceil(available.length / 10);
 
     async function updateChoices(filter: string, query: IQuery) {
+        loading = true;
         choices = await getTopics({
             filter,
             required: {
@@ -36,6 +40,7 @@
             },
             // sort: "similarity DESC",
         });
+        loading = false;
     }
 
     const debouncedUpdate = debounce(updateChoices, 1000, {
@@ -58,31 +63,63 @@
 
 <div class="select-topics">
     {#if $query.topics?.length}
-        {#each $query.topics as topic}
-            <Topic {topic}>
-                <StarButton
-                    slot="details-extra"
-                    label="Remove from search"
-                    on:click={() => removeTopic(topic)}
-                    active={true}
-                />
-            </Topic>
-        {/each}
+        <div class="box">
+            <div class="subtitle is-4">Selected topics</div>
+            {#each $query.topics as topic}
+                <Topic {topic}>
+                    <StarButton
+                        slot="details-extra"
+                        label="Remove from search"
+                        on:click={() => removeTopic(topic)}
+                        active={true}
+                    />
+                </Topic>
+            {/each}
+        </div>
     {/if}
-    <input bind:value={filter} type="text" />
-    <Paginator bind:page max_page={pages} />
-    <div class="topic-table">
-        {#each suggestions as topic}
-            <Topic {topic}>
-                <StarButton
-                    slot="details-extra"
-                    label="Add to search"
-                    on:click={() => addTopic(topic)}
+
+    <div class="box">
+        <div class="subtitle is-4">Find topics</div>
+        <div class="field">
+            <p class="control has-icons-left">
+                <input
+                    class="input"
+                    bind:value={filter}
+                    type="text"
+                    id="query"
+                    name="query"
+                    placeholder="filter by name"
                 />
-            </Topic>
-        {/each}
+                <span class="icon is-small is-left">
+                    <iconify-icon
+                        icon="ph:magnifying-glass-bold"
+                        title="search topics"
+                    />
+                </span>
+            </p>
+        </div>
+
+        <div class="subtitle is-5">Matching topics</div>
+        {#if suggestions?.length}
+            <Paginator bind:page max_page={pages} />
+            <div class="topic-table">
+                {#each suggestions as topic}
+                    <Topic {topic}>
+                        <StarButton
+                            slot="details-extra"
+                            label="Add to search"
+                            on:click={() => addTopic(topic)}
+                        />
+                    </Topic>
+                {/each}
+            </div>
+            <Paginator bind:page max_page={pages} />
+        {:else if loading}
+            <Loading label="topics" />
+        {:else}
+            <NoResults label="topics" />
+        {/if}
     </div>
-    <Paginator bind:page max_page={pages} />
 </div>
 
 <style lang="less">

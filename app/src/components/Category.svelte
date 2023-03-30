@@ -6,12 +6,7 @@
         TutorData,
     } from "@steers/common";
     import { IQuery, query } from "../stores";
-    import {
-        getCategories,
-        getTutors,
-        getTopics,
-        getClients,
-    } from "../utils/api";
+    import { getTutors, getTopics, getClients } from "../utils/api";
     import { view } from "../utils/view";
 
     import Debug from "./utility/Debug.svelte";
@@ -165,6 +160,7 @@
         padding: 0.5em;
         display: flex;
         flex-flow: row nowrap;
+        min-width: max-content;
 
         &:nth-child(even) {
             background-color: rgba(0, 0, 0, 0.02);

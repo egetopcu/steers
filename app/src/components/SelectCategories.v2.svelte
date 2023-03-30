@@ -9,6 +9,8 @@
     import Paginator from "./utility/Paginator.svelte";
     import Category from "./Category.svelte";
     import StarButton from "./StarButton.svelte";
+    import Loading from "./utility/Loading.svelte";
+    import NoResults from "./utility/NoResults.svelte";
 
     let filter: string = "";
     let page = 1;
@@ -22,7 +24,10 @@
     let pages: number;
     $: pages = Math.ceil(available.length / 10);
 
+    let loading = true;
+
     async function updateChoices(filter: string, query: IQuery) {
+        loading = true;
         choices = await getCategories({
             filter,
             required: {
@@ -36,6 +41,7 @@
             },
             // sort: "similarity DESC",
         });
+        loading = false;
     }
 
     const debouncedUpdate = debounce(updateChoices, 1000, {
@@ -58,31 +64,62 @@
 
 <div class="select-categories">
     {#if $query.categories?.length}
-        {#each $query.categories as category}
-            <Category {category}>
-                <StarButton
-                    slot="details-extra"
-                    label="Remove from search"
-                    on:click={() => removeCategory(category)}
-                    active={true}
-                />
-            </Category>
-        {/each}
+        <div class="box">
+            <h2 class="subtitle is-4">Selected interests</h2>
+            {#each $query.categories as category}
+                <Category {category}>
+                    <StarButton
+                        slot="details-extra"
+                        label="Remove from search"
+                        on:click={() => removeCategory(category)}
+                        active={true}
+                    />
+                </Category>
+            {/each}
+        </div>
     {/if}
-    <input bind:value={filter} type="text" />
-    <Paginator bind:page max_page={pages} />
-    <div class="category-table">
-        {#each suggestions as category}
-            <Category {category}>
-                <StarButton
-                    slot="details-extra"
-                    label="Add to search"
-                    on:click={() => addCategory(category)}
+
+    <div class="box">
+        <div class="subtitle is-4">Find interests</div>
+        <div class="field">
+            <p class="control has-icons-left">
+                <input
+                    class="input"
+                    bind:value={filter}
+                    type="text"
+                    id="query"
+                    name="query"
+                    placeholder="filter by name"
                 />
-            </Category>
-        {/each}
+                <span class="icon is-small is-left">
+                    <iconify-icon
+                        icon="ph:magnifying-glass-bold"
+                        title="search interests"
+                    />
+                </span>
+            </p>
+        </div>
+        {#if suggestions?.length}
+            <div class="subtitle is-5">Matching interests</div>
+            <Paginator bind:page max_page={pages} />
+            <div class="category-table">
+                {#each suggestions as category}
+                    <Category {category}>
+                        <StarButton
+                            slot="details-extra"
+                            label="Add to search"
+                            on:click={() => addCategory(category)}
+                        />
+                    </Category>
+                {/each}
+            </div>
+            <Paginator bind:page max_page={pages} />
+        {:else if loading}
+            <Loading label="interests" />
+        {:else}
+            <NoResults label="interests" />
+        {/if}
     </div>
-    <Paginator bind:page max_page={pages} />
 </div>
 
 <style lang="less">

@@ -9,7 +9,10 @@
     import Supervisor from "./Supervisor.svelte";
     import Paginator from "./utility/Paginator.svelte";
     import StarButton from "./StarButton.svelte";
+    import Loading from "./utility/Loading.svelte";
+    import NoResults from "./utility/NoResults.svelte";
 
+    let loading = true;
     let filter: string = "";
     let page = 1;
     let choices: TutorData[] = [];
@@ -23,6 +26,7 @@
     $: pages = Math.ceil(available.length / 10);
 
     async function updateChoices(filter: string, query: IQuery) {
+        loading = true;
         choices = await getTutors({
             filter,
             required: {
@@ -36,6 +40,7 @@
             },
             // sort: "similarity DESC",
         });
+        loading = false;
     }
 
     const debouncedUpdate = debounce(updateChoices, 1000, {
@@ -58,31 +63,63 @@
 
 <div class="select-supervisors">
     {#if $query.tutors?.length}
-        {#each $query.tutors as supervisor}
-            <Supervisor {supervisor}>
-                <StarButton
-                    slot="details-extra"
-                    label="Remove from search"
-                    on:click={() => removeTutor(supervisor)}
-                    active={true}
-                />
-            </Supervisor>
-        {/each}
+        <div class="box">
+            <div class="subtitle is-4">Selected supervisors</div>
+            {#each $query.tutors as supervisor}
+                <Supervisor {supervisor}>
+                    <StarButton
+                        slot="details-extra"
+                        label="Remove from search"
+                        on:click={() => removeTutor(supervisor)}
+                        active={true}
+                    />
+                </Supervisor>
+            {/each}
+        </div>
     {/if}
-    <input bind:value={filter} type="text" />
-    <Paginator bind:page max_page={pages} />
-    <div class="supervisor-table">
-        {#each suggestions as supervisor}
-            <Supervisor {supervisor}>
-                <StarButton
-                    slot="details-extra"
-                    label="Add to search"
-                    on:click={() => addTutor(supervisor)}
+
+    <div class="box">
+        <div class="subtitle is-4">Find supervisors</div>
+        <div class="field">
+            <p class="control has-icons-left">
+                <input
+                    class="input"
+                    bind:value={filter}
+                    type="text"
+                    id="query"
+                    name="query"
+                    placeholder="filter by name"
                 />
-            </Supervisor>
-        {/each}
+                <span class="icon is-small is-left">
+                    <iconify-icon
+                        icon="ph:magnifying-glass-bold"
+                        title="search supervisors"
+                    />
+                </span>
+            </p>
+        </div>
+
+        <div class="subtitle is-5">Matching supervisors</div>
+        {#if suggestions?.length}
+            <Paginator bind:page max_page={pages} />
+            <div class="supervisor-table">
+                {#each suggestions as supervisor}
+                    <Supervisor {supervisor}>
+                        <StarButton
+                            slot="details-extra"
+                            label="Add to search"
+                            on:click={() => addTutor(supervisor)}
+                        />
+                    </Supervisor>
+                {/each}
+            </div>
+            <Paginator bind:page max_page={pages} />
+        {:else if loading}
+            <Loading label="supervisors" />
+        {:else}
+            <NoResults label="supervisors" />
+        {/if}
     </div>
-    <Paginator bind:page max_page={pages} />
 </div>
 
 <style lang="less">

@@ -55,10 +55,14 @@
     </Router>
 </section>
 
-<style>
+<style lang="less">
     #toggle-debug {
         position: fixed;
         top: 1em;
         right: 1em;
+    }
+
+    :global(body, html) {
+        background: #f3f3f3;
     }
 </style>

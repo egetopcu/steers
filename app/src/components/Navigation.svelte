@@ -126,6 +126,7 @@
 
         --colour: darken(#00d1b2, 3);
         width: 100%;
+        margin-bottom: 2em;
     }
 
     .step,
