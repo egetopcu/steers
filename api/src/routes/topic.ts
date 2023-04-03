@@ -1,6 +1,5 @@
 import { RequestHandler } from "express";
 import * as Topics from "../models/topic";
-import { parseQuery, parseQueryArray } from "../models/utils";
 
 export const related: RequestHandler = async (req, res, next) => {
     try {

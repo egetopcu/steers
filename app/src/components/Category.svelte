@@ -8,6 +8,7 @@
     import { IQuery, query } from "../stores";
     import { getTutors, getTopics, getClients } from "../utils/api";
     import { view } from "../utils/view";
+    import EssayTableModal from "./EssayTableModal.svelte";
 
     import Debug from "./utility/Debug.svelte";
     import SkeletalTag from "./utility/SkeletalTag.svelte";
@@ -101,6 +102,7 @@
     <div class="details">
         <div class="name">{category.name}</div>
         <slot name="details-extra" />
+        <EssayTableModal focus={{ categories: [category.id] }} />
         <Debug
             label="category"
             data={{

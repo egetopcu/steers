@@ -32,16 +32,19 @@ export interface TutorData extends BaseData, RelatedData {
     mail: string;
 }
 
-export interface EssayData {
-    id: IdType;
+export type ResourceData<T extends RelatedData> = Omit<T, keyof RelatedData>;
+
+export interface EssayData extends BaseData {
     author: string;
     title: string;
     date: Date;
-    type: string;
-    language?: string;
-    abstract?: string;
-    summary_en?: string;
-    restricted: boolean;
+    abstract: string;
+
+    programme?: ResourceData<ProgrammeData>;
+    categories: ResourceData<CategoryData>[];
+    topics: ResourceData<TopicData>[];
+    tutors: ResourceData<TutorData>[];
+    clients: ResourceData<ClientData>[];
 }
 
 export interface QueryData {

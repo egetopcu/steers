@@ -8,8 +8,8 @@ import type {
     TutorData,
 } from "@steers/common";
 
-// const API_BASE = "http://localhost:3000/";
-const API_BASE = "https://steers-api.home.karel-kroeze.nl/";
+const API_BASE = "http://localhost:3000/";
+// const API_BASE = "https://steers-api.home.karel-kroeze.nl/";
 
 async function getResource(path: string, query: QueryData): Promise<any[]> {
     const url = new URL(path, API_BASE);
@@ -43,15 +43,17 @@ export async function getTopics(query: QueryData): Promise<TopicData[]> {
     return getResource("topics", query);
 }
 
-export async function getEssays(query: QueryData): Promise<
-    (EssayData &
-        Partial<{
-            client: ClientData;
-            topics: TopicData[];
-            programme: ProgrammeData;
-            categories: CategoryData[];
-            tutors: TutorData[];
-        }>)[]
-> {
+export async function getEssays(
+    query: QueryData,
+    focus?: QueryData["required"]
+): Promise<EssayData[]> {
+    if (focus) {
+        for (const key of Object.keys(focus)) {
+            if (!!focus[key]) {
+                console.log(`Adding focus: ${key} = ${focus[key]}`);
+                query.required[key] = focus[key];
+            }
+        }
+    }
     return getResource("essays", query);
 }

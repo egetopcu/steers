@@ -30,7 +30,7 @@ app.all("/programmes", programme.related);
 app.all("/categories", category.filter);
 app.all("/clients", client.filter);
 app.all("/topics", topic.related);
-app.all("/essays", essay.filter);
+app.all("/essays", essay.related);
 app.all("/tutors", tutor.related);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

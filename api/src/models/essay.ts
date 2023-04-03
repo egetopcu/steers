@@ -1,194 +1,142 @@
-import _ from "lodash";
-import { Date, Record, Session } from "neo4j-driver";
-import { Category } from "./category";
-import { Client } from "./client";
-import { Faculty } from "./faculty";
-import { Programme } from "./programme";
-import { Topic } from "./topic";
-import { Tutor } from "./tutor";
-import { IdType } from "../../../common/src/types";
-
 import {
-    Node,
+    IdType,
+    QueryData,
     EssayData,
-    FacultyData,
     ProgrammeData,
     TutorData,
-    TopicData,
-    CategoryData,
     ClientData,
+    CategoryData,
+    TopicData,
 } from "@steers/common";
+import { Session } from "neo4j-driver";
+import { buildClause } from "./utils";
+import { Programme } from "./programme";
+import { Category } from "./category";
+import { Client } from "./client";
+import { Topic } from "./topic";
+import { Tutor } from "./tutor";
 
-export type EssayRecord = Record<{
-    essay: Node<EssayData>;
-    faculty?: Node<FacultyData>;
-    programme?: Node<ProgrammeData>;
-    tutors?: Node<TutorData>[];
-    topics?: Node<TopicData>[];
-    categories?: Node<CategoryData>[];
-    client?: Node<ClientData>;
-}>;
+interface ExtendedEssayData {
+    programme: Record<ProgrammeData>;
+    categories: Record<CategoryData>[];
+    topics: Record<TopicData>[];
+    tutors: Record<TutorData>[];
+    clients: Record<ClientData>[];
+}
 
-export class Essay implements EssayData {
+type Record<Data> = {
+    identity: number;
+    labels: string[];
+    properties: Data;
+    elementId: IdType;
+};
+
+export class Essay {
     public id: IdType;
-    public title: string;
     public author: string;
+    public title: string;
+    public abstract: string;
     public date: Date;
-    public type: string;
-    public language?: string;
-    public abstract?: string;
-    public summary_en?: string;
-    public restricted: boolean = false;
-    public scraped_watson: boolean = false;
-    public scraped_meaningcloud: boolean = false;
-    public faculty?: Faculty;
-    public programme?: Programme;
-    public topics?: Topic[];
-    public categories?: Category[];
-    public tutors?: Tutor[];
-    public client?: Client;
 
-    constructor(record: EssayRecord) {
-        const essay = record.get("essay").properties;
+    public programme?: Programme; // this really _should_ be required, but we have some essays without it set?
+    public categories: Category[];
+    public topics: Topic[];
+    public tutors: Tutor[];
+    public clients: Client[];
 
-        this.id = essay.id;
-        this.title = essay.title;
-        this.author = essay.author;
-        this.date = essay.date;
-        this.type = essay.type;
-        this.language = essay.language;
-        this.abstract = essay.abstract;
-        this.summary_en = essay.summary_en;
-        this.restricted = essay.restricted;
+    constructor(
+        record: EssayData,
+        { programme, categories, topics, tutors, clients }: ExtendedEssayData
+    ) {
+        this.id = record.id;
+        this.title = record.title;
+        this.author = record.author;
+        this.abstract = record.summary_en ?? record.abstract ?? "";
+        this.date = record.date.toStandardDate();
 
-        if (record.has("faculty") && record.get("faculty")) {
-            this.faculty = new Faculty(record.get("faculty")!.properties);
-        }
-
-        if (record.has("programme") && record.get("programme")) {
-            this.programme = new Programme(record.get("programme")!.properties);
-        }
-
-        if (record.has("client") && record.get("client")) {
-            this.client = new Client(record.get("client")!.properties);
-        }
-
-        if (record.has("topics")) {
-            this.topics = record
-                .get("topics")!
-                .map((topic) => new Topic(topic.properties));
-        }
-
-        if (record.has("categories")) {
-            this.categories = record
-                .get("categories")!
-                .map((category) => new Category(category.properties));
-        }
-
-        if (record.has("tutors")) {
-            this.tutors = record
-                .get("tutors")!
-                .map((tutor) => new Tutor(tutor.properties));
-        }
+        this.programme = programme
+            ? new Programme(programme.properties)
+            : undefined;
+        this.categories = categories?.map(
+            (category) => new Category(category.properties)
+        );
+        this.topics = topics?.map((topic) => new Topic(topic.properties));
+        this.tutors = tutors?.map((tutor) => new Tutor(tutor.properties));
+        this.clients = clients?.map((client) => new Client(client.properties));
     }
 }
 
-export async function filter(
-  session: Session,
-  programme: number,
-  categories: number[],
-  tutors: number[],
-  topics: number[],
-  client: number
-): Promise<Essay[]> {
-  const query = {
-    programme,
-    categories,
-    tutors,
-    topics,
-    client,
-  };
+export function related(session: Session, query: QueryData): Promise<Essay[]> {
+    // query helpers are built for resources connected through essays, so we can't use those.
+    // We'll have to implement the Essay methods from scratch, but they should be much simpler.
+    const match_clauses = [`(essay:Essay)`];
+    const where_clauses = [];
 
-  const match_clauses = ["(essay:Essay)"];
-  const optional_match_clauses = [];
-  const where_clauses = [];
-  const return_clauses = [
-    "DISTINCT essay",
-    "programme",
-    "collect(DISTINCT category) as categories",
-    "client",
-    // "collect(DISTINCT tutor) as tutors",
-    "collect(DISTINCT topic) as topics",
-  ];
-
-  match_clauses.push("(essay)--(programme:Programme)");
-  if (programme) {
-    where_clauses.push("programme.id = $programme");
-  }
-  //   else {
-  //     optional_match_clauses.push("(essay)--(programme:Programme)");
-  //   }
-
-  if (categories && categories.length > 0) {
-    match_clauses.push("(essay)--(category:Category)");
-    if (Array.isArray(categories)) {
-      where_clauses.push("category.id IN $categories");
-    } else {
-      where_clauses.push("category.id = $categories");
+    // for each field in the required query, add a where clause
+    if (query.required?.categories?.length) {
+        match_clauses.push(`(essay)-[:IN_CATEGORY]->(category:Category)`);
+        where_clauses.push(`category.id IN $required.categories`);
     }
-  } else {
-    optional_match_clauses.push("(essay)--(category:Category)");
-  }
 
-  if (client) {
-    match_clauses.push("(essay)--(client:Client { id: $client })");
-  } else {
-    optional_match_clauses.push("(essay)--(client:Client)");
-  }
-
-  //   if (tutors && tutors.length > 0) {
-  //     if (Array.isArray(tutors)) {
-  //       where_clauses.push("tutor.id IN $tutors");
-  //     } else {
-  //       where_clauses.push("tutor.id = $tutors");
-  //     }
-  //     match_clauses.push("(essay)--(tutor:Tutor)")
-  //   } else {
-  //     optional_match_clauses.push("(essay)--(tutor:Tutor)")
-  //   }
-
-  if (topics && topics.length > 0) {
-    match_clauses.push("(essay)--(topic:Topic)");
-    if (Array.isArray(topics)) {
-      where_clauses.push("topic.id IN $topics");
-    } else {
-      where_clauses.push("topic.id = $topics");
+    if (query.required?.clients?.length) {
+        match_clauses.push(`(essay)-[:AT_LOCATION]->(client:Client)`);
+        where_clauses.push(`client.id IN $required.clients`);
     }
-  } else {
-    optional_match_clauses.push("(essay)--(topic:Topic)");
-  }
 
-  let query_string = `MATCH ${match_clauses.join(", ")}\n`;
+    if (query.required?.programme) {
+        match_clauses.push(
+            `(essay)-[:AT_LOCATION]->(programme:Programme { id: $required.programme })`
+        );
+    }
 
-  if (where_clauses.length > 0) {
-    query_string += `WHERE ${where_clauses.join(" AND ")}\n`;
-  }
+    if (query.required?.topics?.length) {
+        match_clauses.push(`(essay)-[:HAS_TOPIC]->(topic:Topic)`);
+        where_clauses.push(`topic.id IN $required.topics`);
+    }
 
-  query_string += `OPTIONAL MATCH ${optional_match_clauses.join(", ")}\n`;
-  query_string += `RETURN ${return_clauses.join(", ")}\n`;
-  query_string += `LIMIT 100`;
+    if (query.required?.tutors?.length) {
+        match_clauses.push(`(essay)-[:TUTORED_BY]->(tutor:Tutor)`);
+        where_clauses.push(`tutor.id IN $required.tutors`);
+    }
 
-  console.log({ query_string, query });
+    const query_string = [
+        buildClause(`MATCH`, match_clauses),
+        buildClause(`WHERE`, where_clauses, " AND "),
+        "WITH essay",
+        "LIMIT 50",
+        buildClause(
+            `OPTIONAL MATCH`,
+            [
+                "(essay)-[:AT_LOCATION]->(programme:Programme)",
+                "(essay)-[:IN_CATEGORY]->(category:Category)",
+                "(essay)-[:HAS_TOPIC]->(topic:Topic)",
+                "(essay)-[:TUTORED_BY]->(tutor:Tutor)",
+                "(essay)-[:AT_LOCATION]->(client:Client)",
+            ],
+            "\nOPTIONAL MATCH "
+        ),
+        buildClause(`RETURN`, [
+            "essay",
+            "programme",
+            "collect(distinct category) as categories",
+            "collect(distinct topic) as topics",
+            "collect(distinct tutor) as tutors",
+            "collect(distinct client) as clients",
+        ]),
+    ].join("\n");
 
-  return session.readTransaction(async (tx) => {
-    const result = (await tx.run(query_string, query)) as unknown as {
-      records: EssayRecord[];
-    };
+    console.log(query_string);
 
-    const essays = result.records.map((record) => {
-      return new Essay(record);
+    const query_data = { required: query.required };
+    return session.run(query_string, query_data).then((result) => {
+        const essays = result.records.map((record) => {
+            // console.log(JSON.stringify(record.toObject(), null, 2));
+            const { essay, ...properties } = record.toObject();
+            return {
+                ...new Essay(essay.properties, properties as any),
+            };
+        });
+
+        return essays;
     });
-    console.log({ results: essays?.length });
-    return essays;
-  });
 }
