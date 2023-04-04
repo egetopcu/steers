@@ -13,6 +13,7 @@
         getClients,
     } from "../utils/api";
     import { view } from "../utils/view";
+    import EssayTableModal from "./EssayTableModal.svelte";
 
     import Debug from "./utility/Debug.svelte";
     import SkeletalTag from "./utility/SkeletalTag.svelte";
@@ -97,6 +98,7 @@
     <div class="details">
         <div class="name">{topic.name}</div>
         <slot name="details-extra" />
+        <EssayTableModal focus={{ topics: [topic.id] }} />
         <Debug
             label="topic"
             data={{
