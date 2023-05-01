@@ -8,6 +8,7 @@
     import { IQuery, query } from "../stores";
     import { getCategories, getClients, getTopics } from "../utils/api";
     import { view } from "../utils/view";
+    import EssayTableModal from "./EssayTableModal.svelte";
 
     import Debug from "./utility/Debug.svelte";
     import SkeletalTag from "./utility/SkeletalTag.svelte";
@@ -131,6 +132,7 @@
                 .join(", ") ?? ""}
         </div>
         <slot name="details-extra" />
+        <EssayTableModal focus={{ tutors: [supervisor.id] }} />
         <Debug
             label="details"
             data={{

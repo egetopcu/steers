@@ -1,0 +1,9 @@
+POST http://localhost:3000/essays
+content-type: application/json
+
+{
+    "required": {
+        "tutors": [1529],
+        "topics": [7540,26706,9009]
+    }
+}

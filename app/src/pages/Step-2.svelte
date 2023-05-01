@@ -1,5 +1,5 @@
 <script lang="ts">
-    import SelectCategories from "../components/SelectCategories.svelte";
+    import SelectCategories from "../components/SelectCategories.v2.svelte";
     import ChooseGoal from "../components/ChooseGoal.svelte";
     import SimilarCategories from "../components/SimilarCategories.svelte";
 
@@ -14,6 +14,4 @@
 
 <div id="steers-step-1">
     <SelectCategories />
-    <SimilarCategories />
-    <ChooseGoal />
 </div>

@@ -11,6 +11,5 @@
 </script>
 
 <div class="under-construction">
-    <h4 class="title is-size-6">Find your supervisor...</h4>
     <SelectSupervisors />
 </div>
