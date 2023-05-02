@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: asdqwe
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes: 
+      - steers-db:/var/lib/postgresql/data/pgdata
+      - ./scraper/db-export:/import
+    ports:
+      - 5432:5432
+
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+
+volumes:
+  steers-db:

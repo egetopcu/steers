@@ -133,7 +133,7 @@ async def store_essay(essay, props):
                 abstract=props["abstract"].strip() if "abstract" in props else None,
                 type=props["type"].strip() if "type" in props else None,
                 author=essay.author.strip() if "author" in essay else None,
-                date=essay.date.strip() if "date" in essay else None,
+                date=essay.published.strip() if "published" in essay else None,
                 restricted=props["restricted"] if "restricted" in props else False,
             )
 
@@ -164,9 +164,9 @@ async def store_essay(essay, props):
 async def main():
     print("parsing rss feed...")
     feed = feedparser.parse(
-        "https://essay.utwente.nl/cgi/exportview/faculty/BMS/Atom/BMS.xml"
-        # "data/BMS.xml"
-        # "../../data/BMS.xml"
+        # "https://essay.utwente.nl/cgi/exportview/faculty/BMS/Atom/BMS.xml"
+        "feed/BMS.xml"
+        # "feed/BMS-light.xml"
     )
 
     print(f"    {len(feed.entries)} entries loaded.")
@@ -174,6 +174,7 @@ async def main():
     # with open("data/feed.data", "w") as file:
     #     json.dump({"feed": feed.feed, "entries": feed.entries}, file)
 
+    clear_db()
     create_tables()
     max = len(feed.entries)
     details_queue = asyncio.Queue()
@@ -210,3 +211,16 @@ async def main():
 
 
 asyncio.run(main())
+
+# feed = feedparser.parse(
+#         # "https://essay.utwente.nl/cgi/exportview/faculty/BMS/Atom/BMS.xml"
+#         # "feed/BMS.xml"
+#         "feed/BMS-light.xml"
+#     )
+
+# print(f"    {len(feed.entries)} entries loaded.")
+
+# for entry in feed.entries:
+#     print(entry.date)
+#     # print(entry.keys())
+#     print(entry.published)

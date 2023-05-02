@@ -1,8 +1,8 @@
 import os
 from os import path
 from peewee import (
-    SqliteDatabase,
-    # PostgresqlDatabase,
+    # SqliteDatabase,
+    PostgresqlDatabase,
     Model,
     AutoField,
     CharField,
@@ -12,19 +12,20 @@ from peewee import (
     IntegerField,
     BooleanField,
     CompositeKey,
+    FloatField
 )
 
 
-DB_FILE = path.normpath(path.join(path.dirname(__file__), "../essays-ingest.db"))
-print(DB_FILE)
-db: SqliteDatabase = SqliteDatabase(DB_FILE)
-# db: PostgresqlDatabase = PostgresqlDatabase(
-#     "steers",
-#     user="postgres",
-#     password=os.environ.get("POSTGRES_PASSWORD"),
-#     host="localhost",
-#     port=os.environ.get("POSTGRES_HOST_PORT"),
-# )
+# DB_FILE = path.normpath(path.join(path.dirname(__file__), "../essays-ingest.db"))
+# print(DB_FILE)
+# db: SqliteDatabase = SqliteDatabase(DB_FILE)
+db: PostgresqlDatabase = PostgresqlDatabase(
+    "postgres",
+    user="postgres",
+    password="asdqwe",
+    host="localhost",
+    port=5432,
+)
 
 
 class BaseModel(Model):
@@ -45,27 +46,23 @@ class Faculty(BaseModel):
 class Programme(BaseModel):
     id = AutoField()
     name = CharField()
-    code = IntegerField(null=True)
+    code = CharField(null=True)
 
 
 class Topic(BaseModel):
     id = AutoField()
     name = CharField()
-    source = CharField()
-    type = CharField(null=True)
-    code = CharField(null=True)
 
 
 class Category(BaseModel):
     id = AutoField()
     name = CharField()
-    source = CharField()
     parent = ForeignKeyField("self", backref="children", null=True)
 
 
 class Essay(BaseModel):
     id = IntegerField(primary_key=True)
-    title = CharField()
+    title = TextField()
     author = CharField()
     date = DateField()
     type = CharField(null=True)
@@ -103,17 +100,21 @@ class EssayTutor(BaseModel):
 class EssayTopic(BaseModel):
     essay = ForeignKeyField(Essay)
     topic = ForeignKeyField(Topic)
+    method = TextField()
+    rank = FloatField(null=True)
 
     class Meta:
-        primary_key = CompositeKey("essay", "topic")
+        primary_key = CompositeKey("essay", "topic", "method")
 
 
 class EssayCategory(BaseModel):
     essay = ForeignKeyField(Essay)
     category = ForeignKeyField(Category)
+    method = TextField()
+    rank = FloatField(null=True)
 
     class Meta:
-        primary_key = CompositeKey("essay", "category")
+        primary_key = CompositeKey("essay", "category", "method")
 
 
 def create_tables():
