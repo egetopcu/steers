@@ -1,5 +1,5 @@
 import dotenv
-dotenv.load_dotenv("ibm-credentials.env")
+dotenv.load_dotenv()
 
 from database import *
 import langdetect
