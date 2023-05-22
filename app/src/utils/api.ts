@@ -45,15 +45,6 @@ export async function getTopics(query: QueryData): Promise<TopicData[]> {
 
 export async function getEssays(
     query: QueryData,
-    focus?: QueryData["required"]
 ): Promise<EssayData[]> {
-    if (focus) {
-        for (const key of Object.keys(focus)) {
-            if (!!focus[key]) {
-                console.log(`Adding focus: ${key} = ${focus[key]}`);
-                query.required[key] = focus[key];
-            }
-        }
-    }
     return getResource("essays", query);
 }

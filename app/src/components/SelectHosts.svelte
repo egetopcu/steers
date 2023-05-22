@@ -31,9 +31,9 @@
             filter,
             required: {
                 programme: query.programme?.id,
-                categories: query.categories?.map((c) => c.id),
             },
             optional: {
+                categories: query.categories?.map((c) => c.id),
                 topics: query.topics?.map((t) => t.id),
                 tutors: query.tutors?.map((t) => t.id),
                 clients: query.clients?.map((t) => t.id),

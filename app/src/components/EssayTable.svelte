@@ -13,20 +13,28 @@
 
     async function updateEssays(query: IQuery, focus?: QueryData["required"]) {
         loading = true;
-        const required: QueryData["required"] = {};
-        if (query.programme) {
-            required.programme = query.programme.id;
+        const querydata: QueryData = {
+            required: {
+                programme: query.programme?.id,
+                ...focus,
+            },
+            optional: {},
+        };
+
+        if (query.categories) {
+            querydata.optional.categories = query.categories.map((c) => c.id);
+        }
+        if (query.clients) {
+            querydata.optional.clients = query.clients.map((c) => c.id);
+        }
+        if (query.topics) {
+            querydata.optional.topics = query.topics.map((t) => t.id);
+        }
+        if (query.tutors) {
+            querydata.optional.tutors = query.tutors.map((t) => t.id);
         }
 
-        if (query.categories?.length) {
-            required.categories = query.categories.map(
-                (category) => category.id
-            );
-        }
-
-        // TODO: we're currently completely ignoring tutors, topics and hosts.
-
-        essays = await getEssays({ required }, focus);
+        essays = await getEssays(querydata);
         loading = false;
     }
 
