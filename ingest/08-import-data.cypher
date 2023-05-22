@@ -130,7 +130,7 @@ CALL {
     MERGE (essay)-[:AT_LOCATION]->(programme)
 
     WITH essay, row 
-    WHERE trim(row.client_id) <> ""
+    WHERE trim(row.client) <> ""
     MATCH (client:Client {id: toInteger(row.client)})
     MERGE (essay)-[:AT_LOCATION]->(client)
 } IN TRANSACTIONS OF 500 ROWS;

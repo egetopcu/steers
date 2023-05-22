@@ -36,6 +36,10 @@ class BaseModel(Model):
 class Client(BaseModel):
     id = AutoField()
     name = CharField()
+    label = TextField(null=True)
+    url = TextField(null=True)
+    wikidata_id = CharField(null=True)
+    google_id = CharField(null=True)
 
 
 class Faculty(BaseModel):

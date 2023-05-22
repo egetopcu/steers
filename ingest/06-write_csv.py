@@ -8,7 +8,7 @@ out_dir = "db/import"
 
 # write all essays
 print("Essays...")
-with open(path.join(out_dir, "essay.csv"), "w+") as f:
+with open(path.join(out_dir, "essay.csv"), "w+", encoding="utf-8") as f:
     writer = csv.DictWriter(f, ["id", "client", "faculty", "programme", "title", "author", "date", "summary_en"])
     writer.writeheader()
 
@@ -18,12 +18,12 @@ with open(path.join(out_dir, "essay.csv"), "w+") as f:
 
 # write all clients
 print("Clients...")    
-with open(path.join(out_dir, "client.csv"), "w+") as f:
-    writer = csv.DictWriter(f, ["id", "name", "freq"])
+with open(path.join(out_dir, "client.csv"), "w+", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, ["id", "name", "freq", "label", "google_id", "wikidata_id", "url"])
     writer.writeheader()
 
     for client in (Client
-                    .select(Client.id, Client.name, fn.COUNT(Essay.id).alias("freq"))
+                    .select(Client.id, Client.name, fn.COUNT(Essay.id).alias("freq"), Client.label, Client.google_id, Client.wikidata_id, Client.url)
                     .join(Essay, JOIN.INNER)
                     .group_by(Client.id, Client.name)
                     .dicts()
@@ -32,7 +32,7 @@ with open(path.join(out_dir, "client.csv"), "w+") as f:
 
 # write all faculties
 print("Faculties...")
-with open(path.join(out_dir, "faculty.csv"), "w+") as f:
+with open(path.join(out_dir, "faculty.csv"), "w+", encoding="utf-8") as f:
     writer = csv.DictWriter(f, ["id", "name", "freq"])
     writer.writeheader()
 
@@ -46,7 +46,7 @@ with open(path.join(out_dir, "faculty.csv"), "w+") as f:
 
 # write all programmes
 print("Programmes...")
-with open(path.join(out_dir, "programme.csv"), "w+") as f:
+with open(path.join(out_dir, "programme.csv"), "w+", encoding="utf-8") as f:
     writer = csv.DictWriter(f, ["id", "name", "freq"])
     writer.writeheader()
 
@@ -60,8 +60,8 @@ with open(path.join(out_dir, "programme.csv"), "w+") as f:
 
 # write topics for selected method(s)
 print("Topics...")
-methods = ["spacy topicrank", "watson concepts", "watson entities"]
-with open(path.join(out_dir, "topic.csv"), "w+") as f:
+methods = ["spacy topicrank", "watson concepts", "watson entities", "openai gpt-3.5-turbo"]
+with open(path.join(out_dir, "topic.csv"), "w+", encoding="utf-8") as f:
     writer = csv.DictWriter(f, ["id", "name", "freq"])
     writer.writeheader()
 
@@ -81,7 +81,7 @@ with open(path.join(out_dir, "topic.csv"), "w+") as f:
 
 # write link table for selected methods/topics
 print("EssayTopics...")
-with open(path.join(out_dir, "essaytopic.csv"), "w+") as f:
+with open(path.join(out_dir, "essaytopic.csv"), "w+", encoding="utf-8") as f:
     writer = csv.DictWriter(f, ["essay", "topic"])
     writer.writeheader()
 
@@ -96,8 +96,8 @@ with open(path.join(out_dir, "essaytopic.csv"), "w+") as f:
 
 # write categories for selected method(s)
 print("Categories...")
-methods = ["watson categories"]
-with open(path.join(out_dir, "category.csv"), "w+") as f:
+methods = ["openai gpt-3.5-turbo"]
+with open(path.join(out_dir, "category.csv"), "w+", encoding="utf-8") as f:
     writer = csv.DictWriter(f, ["id", "name", "parent", "freq"])
     writer.writeheader()
 
@@ -118,7 +118,7 @@ with open(path.join(out_dir, "category.csv"), "w+") as f:
 
 # and the links 
 print("EssayCategories...")
-with open(path.join(out_dir, "essaycategory.csv"), "w+") as f:
+with open(path.join(out_dir, "essaycategory.csv"), "w+", encoding="utf-8") as f:
     writer = csv.DictWriter(f, ["essay", "category"])
     writer.writeheader()
 
