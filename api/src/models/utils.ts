@@ -266,7 +266,10 @@ export function buildRelatedQuery(
 
     const query_string = clauses.join(" ");
     // if (resource == "Tutor") {
-    console.log({ resource, query, query_string });
+    // console.log({ resource, query, query_string });
     // }
+    if (resource == "Tutor") {
+        console.log(JSON.stringify({resource, query, query_string}, null, 2));
+    }
     return query_string;
 }

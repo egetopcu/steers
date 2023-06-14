@@ -77,10 +77,13 @@ subjects <- library %>%
             name = Subject)
 
 lib_tutors <- library %>%
-  filter(`Tutor Type` != "external",!is.na(`Tutor Name`)) %>%
-  distinct(`Item ID`, `Tutor Name`) %>%
+  # filter(!is.na(`Tutor Name`)) %>%
+  distinct(`Item ID`, `Tutor Name`, .keep_all = TRUE) %>%
   transmute(essay_id = `Item ID`,
-            name = `Tutor Name`)
+            name = `Tutor Name`,
+            type = `Tutor Type`) %>%
+  mutate(type = replace_na(type, "unknown")) %>%
+  filter(!is.na(name), type != "external")
 
 clients <- library %>%
   filter(!is.na(`Clients Organization`)) %>%
@@ -295,20 +298,14 @@ tutor_essay_links <- normalized_tutors %>%
 tutors_table <- tbl(con, "tutor")
 essay_tutor_join <- tbl(con, "essaytutor")
 
-handle_tutor <- function(id, surname, prefix, initials, titles, name, essay_ids) {
-  # cat(id, name, "\n")
-  # insert tutor
-  rows_upsert(tutors_table, tibble(id, surname, prefix, initials, titles, name), by = c("id"), copy = TRUE, in_place = TRUE)
-  # insert tutor-essay links
-  # Note that we have manually set tutor_ids, so no need to fetch tutor again
-  # rows_append(essay_tutor_join, tibble(essay_id = essay_ids %>% unlist(), tutor_id = id), copy = TRUE, in_place = TRUE)
-}
-
-unique_tutors %>%
-  # filter(essay_id %in% essay_ids) %>%
-  # nest(essay_ids = essay_id) %>%
-  # mutate(id = row_number()) %>%
-  purrr::pwalk(handle_tutor, .progress = TRUE)
+rows_insert(
+  tutors_table,
+  unique_tutors,
+  by = c("id"),
+  conflict = "ignore",
+  copy = TRUE,
+  in_place = TRUE
+)
 
 rows_insert(
   essay_tutor_join,
