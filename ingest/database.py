@@ -83,15 +83,14 @@ class Essay(BaseModel):
 
 
 class Tutor(BaseModel):
-    id = AutoField()
-    resolved_id_anna = IntegerField(index=True, null=True)
-
-
-class TutorNames(BaseModel):
-    id = AutoField()
-    name = CharField()
-    tutor = ForeignKeyField(Tutor, backref="names", null=True)
-
+    id = IntegerField(primary_key=True)
+    surname = TextField()
+    prefix = TextField(null=True)
+    initials = TextField(null=True)
+    titles = TextField(null=True)
+    name = TextField()
+    contact_id = TextField(index=True, null=True)
+    email = TextField(null=True)
 
 class EssayTutor(BaseModel):
     essay = ForeignKeyField(Essay, backref="tutors")
@@ -134,7 +133,6 @@ def create_tables():
             EssayTopic,
             EssayCategory,
             EssayTutor,
-            TutorNames,
         ]
     )
 
@@ -152,6 +150,7 @@ def clear_db():
             EssayTopic,
             EssayCategory,
             EssayTutor,
-            TutorNames,
         ]
     )
+
+

@@ -60,7 +60,7 @@ with open(path.join(out_dir, "programme.csv"), "w+", encoding="utf-8") as f:
 
 # write topics for selected method(s)
 print("Topics...")
-methods = ["spacy topicrank", "watson concepts", "watson entities", "openai gpt-3.5-turbo"]
+methods = ["spacy topicrank", "watson concepts", "watson entities", "openai gpt-3.5-turbo", "library keywords"]
 with open(path.join(out_dir, "topic.csv"), "w+", encoding="utf-8") as f:
     writer = csv.DictWriter(f, ["id", "name", "freq"])
     writer.writeheader()
@@ -96,7 +96,7 @@ with open(path.join(out_dir, "essaytopic.csv"), "w+", encoding="utf-8") as f:
 
 # write categories for selected method(s)
 print("Categories...")
-methods = ["openai gpt-3.5-turbo"]
+methods = ["openai gpt-3.5-turbo", "library subjects"]
 with open(path.join(out_dir, "category.csv"), "w+", encoding="utf-8") as f:
     writer = csv.DictWriter(f, ["id", "name", "parent", "freq"])
     writer.writeheader()
@@ -129,3 +129,5 @@ with open(path.join(out_dir, "essaycategory.csv"), "w+", encoding="utf-8") as f:
                     .group_by(EssayCategory.essay, EssayCategory.category)
                     .dicts().iterator()):
         writer.writerow(link)
+
+# TODO: write tutors, essaytutor links

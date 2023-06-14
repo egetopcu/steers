@@ -5,7 +5,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes: 
-      - ./db/pgdata:/var/lib/postgresql/data/pgdata
+      - postgres-db:/var/lib/postgresql/data/pgdata
     ports:
       - 5432:5432
 
@@ -15,7 +15,7 @@ services:
       - 7474:7474
       - 7687:7687
     volumes:
-      - ./db/data:/data
+      - neo4j-db:/data
       - ./db/logs:/logs
       - ./db/plugins:/plugins
       - ./db/import:/var/lib/neo4j/import
@@ -23,7 +23,7 @@ services:
     # first time setup
     environment:
       - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
-      # - NEO4J_PLUGINS=["graph-data-science", "apoc"]
+      - NEO4J_PLUGINS=["graph-data-science", "apoc"]
 
   adminer:
     image: adminer
@@ -31,4 +31,5 @@ services:
       - 8080:8080
 
 volumes:
-  steers-db:
+  postgres-db:
+  neo4j-db:

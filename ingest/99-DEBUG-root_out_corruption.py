@@ -5,7 +5,7 @@ offset = 0
 
 while True:
     try:
-        query = EssayTopic.select().order_by(EssayTopic.id).offset(offset).limit(batch_size)
+        query = Tutor.select().order_by(Tutor.id).offset(offset).limit(batch_size)
         # print(query.sql())
         results = query.count()
         print(f"{offset}-{offset+min(batch_size, results)} OK!")

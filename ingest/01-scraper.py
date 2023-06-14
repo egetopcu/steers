@@ -1,14 +1,12 @@
 from asyncio.tasks import create_task, gather, sleep
 import os
 import re
-from sqlite3 import IntegrityError
 from typing import Union
 import bs4
 import feedparser
 import httpx
 import progressbar
 from pprint import pprint as print
-import json
 
 from database import *
 import asyncio
@@ -39,7 +37,7 @@ def parse_table(table):
         props["subjects"] = []
         for subject in props["subject"].split(", "):
             code, name = SUBJECT_REGEX.match(subject.strip()).groups()
-            props["subjects"].append({"code": code, "name": name})
+            props["subjects"].append({"name": name})
 
     if "clients" in props:
         props["client"] = props["clients"]
@@ -150,9 +148,9 @@ async def store_essay(essay, props):
                 essay.programme = programme
 
             if "subjects" in props:
-                for topic in props["subjects"]:
-                    topic, _ = Topic.get_or_create(**topic, source="library")
-                    EssayTopic.create(essay=essay, topic=topic)
+                for subject in props["subjects"]:
+                    category, _ = Category.get_or_create(**subject)
+                    EssayCategory.create(essay=essay, category=category, method="library subjects")
 
             essay.save()
     # except IntegrityError:
@@ -164,8 +162,8 @@ async def store_essay(essay, props):
 async def main():
     print("parsing rss feed...")
     feed = feedparser.parse(
-        # "https://essay.utwente.nl/cgi/exportview/faculty/BMS/Atom/BMS.xml"
-        "feed/BMS.xml"
+        "https://essay.utwente.nl/cgi/exportview/faculty/BMS/Atom/BMS.xml"
+        # "feed/BMS.xml"
         # "feed/BMS-light.xml"
     )
 

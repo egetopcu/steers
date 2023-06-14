@@ -52,7 +52,7 @@ for i, essay in enumerate(Essay.select().where(Essay.language == None).iterator(
                 essay.summary_en = essay.abstract
 
             else:   
-                print("\nError getting translation:", e)
+                print("\nError getting translation:", e)                            
                 essay.language = "xx"
                 essay.summary_en = None
 
