@@ -76,7 +76,7 @@ subjects <- library %>%
   transmute(essay_id = `Item ID`,
             name = Subject)
 
-tutors <- library %>%
+lib_tutors <- library %>%
   filter(`Tutor Type` != "external",!is.na(`Tutor Name`)) %>%
   distinct(`Item ID`, `Tutor Name`) %>%
   transmute(essay_id = `Item ID`,
@@ -110,103 +110,103 @@ con <- DBI::dbConnect(
   password = rstudioapi::askForPassword("local postgres ingest DB password")
 )
 
-# add keywords as topics
-topics <- tbl(con, "topic")
-essay_topic_join <- tbl(con, "essaytopic")
-categories <- tbl(con, "category")
-essay_category_join <- tbl(con, "essaycategory")
+# # add keywords as topics
+# topics <- tbl(con, "topic")
+# essay_topic_join <- tbl(con, "essaytopic")
+# categories <- tbl(con, "category")
+# essay_category_join <- tbl(con, "essaycategory")
 essays <- tbl(con, "essay")
 essay_ids <- essays %>% pull(id)
 
 
-# attach keyword(s) as topics ---------------------------------------------
+# # attach keyword(s) as topics ---------------------------------------------
 
-# helper function to create a topic if it does not yet exist, and add it to the
-# correct essays
-handle_topic <- function(label, data, method) {
-  topic <- topics %>%
-    filter(name == label) %>%
-    head(1) %>%
-    collect()
+# # helper function to create a topic if it does not yet exist, and add it to the
+# # correct essays
+# handle_topic <- function(label, data, method) {
+#   topic <- topics %>%
+#     filter(name == label) %>%
+#     head(1) %>%
+#     collect()
   
-  if (topic %>% nrow() == 0) {
-    # create new topic
-    rows_append(topics,
-                tibble(name = label),
-                copy = TRUE,
-                in_place = TRUE)
+#   if (topic %>% nrow() == 0) {
+#     # create new topic
+#     rows_append(topics,
+#                 tibble(name = label),
+#                 copy = TRUE,
+#                 in_place = TRUE)
     
-    # grab newly created row (because it isnt returned?)
-    topic <- topics %>%
-      filter(name == label) %>%
-      head(1) %>%
-      collect()
-  }
+#     # grab newly created row (because it isnt returned?)
+#     topic <- topics %>%
+#       filter(name == label) %>%
+#       head(1) %>%
+#       collect()
+#   }
   
-  # insert links
-  links = tibble(
-    essay_id = data$essay_id,
-    topic_id = topic$id,
-    method = method
-  ) %>%
-    filter(essay_id %in% essay_ids) # library data includes some outdated versions
+#   # insert links
+#   links = tibble(
+#     essay_id = data$essay_id,
+#     topic_id = topic$id,
+#     method = method
+#   ) %>%
+#     filter(essay_id %in% essay_ids) # library data includes some outdated versions
   
-  rows_upsert(essay_topic_join,
-              links,
-              by = c("essay_id", "topic_id", "method"),
-              copy = TRUE,
-              in_place = TRUE)
-}
+#   rows_upsert(essay_topic_join,
+#               links,
+#               by = c("essay_id", "topic_id", "method"),
+#               copy = TRUE,
+#               in_place = TRUE)
+# }
 
 
-keywords %>%
-  nest_by(name) %>%
-  rename(label = name) %>%
-  purrr::pwalk(handle_topic, method = "library keywords", .progress = TRUE)
+# keywords %>%
+#   nest_by(name) %>%
+#   rename(label = name) %>%
+#   purrr::pwalk(handle_topic, method = "library keywords", .progress = TRUE)
 
 
 
-# attach subject(s) as categories -----------------------------------------
+# # attach subject(s) as categories -----------------------------------------
 
-handle_category <- function(label, data, method) {
-  category <- categories %>%
-    filter(name == label) %>%
-    head(1) %>%
-    collect()
+# handle_category <- function(label, data, method) {
+#   category <- categories %>%
+#     filter(name == label) %>%
+#     head(1) %>%
+#     collect()
   
-  if (category %>% nrow() == 0) {
-    # create new topic
-    rows_append(categories,
-                tibble(name = label),
-                copy = TRUE,
-                in_place = TRUE)
+#   if (category %>% nrow() == 0) {
+#     # create new topic
+#     rows_append(categories,
+#                 tibble(name = label),
+#                 copy = TRUE,
+#                 in_place = TRUE)
     
-    # grab newly created row (because it isnt returned?)
-    category <- categories %>%
-      filter(name == label) %>%
-      head(1) %>%
-      collect()
-  }
+#     # grab newly created row (because it isnt returned?)
+#     category <- categories %>%
+#       filter(name == label) %>%
+#       head(1) %>%
+#       collect()
+#   }
   
-  # insert links
-  links = tibble(
-    essay_id = data$essay_id,
-    category_id = category$id,
-    method = method
-  ) %>%
-    filter(essay_id %in% essay_ids) # library data includes some outdated versions
+#   # insert links
+#   links = tibble(
+#     essay_id = data$essay_id,
+#     category_id = category$id,
+#     method = method
+#   ) %>%
+#     filter(essay_id %in% essay_ids) # library data includes some outdated versions
   
-  rows_upsert(essay_category_join,
-              links,
-              by = c("essay_id", "category_id", "method"),
-              copy = TRUE,
-              in_place = TRUE)
-}
+#   rows_upsert(essay_category_join,
+#               links,
+#               by = c("essay_id", "category_id", "method"),
+#               copy = TRUE,
+#               in_place = TRUE)
+# }
 
-subjects %>%
-  nest_by(name) %>%
-  rename(label = name) %>%
-  purrr::pwalk(handle_category, method = "library subjects", .progress = TRUE)
+# subjects %>%
+#   nest_by(name) %>%
+#   rename(label = name) %>%
+#   purrr::pwalk(handle_category, method = "library subjects", .progress = TRUE)
 
 
 # disambiguate supervisors ------------------------------------------------
@@ -245,7 +245,7 @@ extract_pattern <- function(str, pattern, sep = " ") {
     paste0(collapse = sep)
 }
 
-normalized_tutors <- tutors %>%
+normalized_tutors <- lib_tutors %>%
   mutate(
     name = stringr::str_to_lower(name),
     parts = stringr::str_split(name, ", ", simplify = TRUE),
@@ -277,23 +277,44 @@ normalized_tutors <- tutors %>%
     name=glue::glue("{surname}, {initials} {prefixes}") %>% 
       stringr::str_squish() 
   ) %>%
-  filter(stringr::str_length(name) >= 6)
+  filter(stringr::str_length(name) >= 6) %>%
+  group_by(name) %>%
+  mutate(id = cur_group_id()) %>%
+  arrange(name, essay_id %>% desc())
+
+unique_tutors <- normalized_tutors %>%
+  summarize(across(-essay_id, first))
+tutor_essay_links <- normalized_tutors %>%
+  ungroup() %>%
+  transmute(
+    tutor_id = id,
+    essay_id
+  )
+  
 
 tutors_table <- tbl(con, "tutor")
 essay_tutor_join <- tbl(con, "essaytutor")
+
 handle_tutor <- function(id, surname, prefix, initials, titles, name, essay_ids) {
   # cat(id, name, "\n")
-  
-  # insert tutor 
+  # insert tutor
   rows_upsert(tutors_table, tibble(id, surname, prefix, initials, titles, name), by = c("id"), copy = TRUE, in_place = TRUE)
-  
   # insert tutor-essay links
   # Note that we have manually set tutor_ids, so no need to fetch tutor again
-  rows_append(essay_tutor_join, tibble(essay_id = essay_ids %>% unlist(), tutor_id = id), copy = TRUE, in_place = TRUE)
+  # rows_append(essay_tutor_join, tibble(essay_id = essay_ids %>% unlist(), tutor_id = id), copy = TRUE, in_place = TRUE)
 }
 
-normalized_tutors %>%
-  filter(essay_id %in% essay_ids) %>%
-  nest(essay_ids = essay_id) %>% 
-  mutate(id = row_number()) %>% 
+unique_tutors %>%
+  # filter(essay_id %in% essay_ids) %>%
+  # nest(essay_ids = essay_id) %>%
+  # mutate(id = row_number()) %>%
   purrr::pwalk(handle_tutor, .progress = TRUE)
+
+rows_insert(
+  essay_tutor_join,
+  tutor_essay_links,
+  by = c("tutor_id", "essay_id"),
+  conflict = "ignore",
+  copy = TRUE,
+  in_place = TRUE
+)
