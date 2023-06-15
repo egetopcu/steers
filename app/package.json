@@ -26,7 +26,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "@bdsi-utwente/steers-common": "^1.0.1",
+    "@bdsi-utwente/steers-common": "^1.0.0",
     "date-fns": "^2.30.0",
     "iconify-icon": "^1.0.7",
     "less": "^4.1.3",

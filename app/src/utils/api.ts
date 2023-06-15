@@ -8,8 +8,10 @@ import type {
     TutorData,
 } from "@bdsi-utwente/steers-common";
 
-const API_BASE = "http://localhost:3000/";
-// const API_BASE = "https://steers-api.home.karel-kroeze.nl/";
+
+// TODO: set api base url from environment parameter?
+// const API_BASE = "http://localhost:3000/";
+const API_BASE = "https://steers-api.home.karel-kroeze.nl/";
 
 async function getResource(path: string, query: QueryData): Promise<any[]> {
     const url = new URL(path, API_BASE);

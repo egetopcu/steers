@@ -1,0 +1,41 @@
+services:
+    app:
+        build: 
+            # dockerfile: ./app/Dockerfile
+            context: ./app
+        ports:
+            - 80:8080
+        depends_on:
+            - api
+
+    api:
+        build:
+            # dockerfile: Dockerfile
+            context: ./api
+            args:
+                - gh_token=$GH_TOKEN
+            target: app
+        ports: 
+            - 3000:3000
+        depends_on:
+            - db
+        environment:
+            - NEO4J_USER=${NEO4J_USER}
+            - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+            - NEO4J_URI=${NEO4J_URI}
+
+    db:
+        image: neo4j:latest
+        ports:
+            - 7474:7474
+            - 7687:7687
+        volumes:
+            - neo4j-db:/data
+            - ./ingest/db/import:/var/lib/neo4j/import
+
+        # first time setup
+        environment:
+            - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+
+volumes:
+    neo4j-db:
