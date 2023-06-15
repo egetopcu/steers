@@ -6,7 +6,9 @@ WORKDIR /app
 COPY package.json .
 COPY .npmrc .
 
-RUN npm install
+RUN npm remove @bdsi-utwente/steers-common \
+    && npm add @bdsi-utwente/steers-common \
+    && npm install
 
 COPY ./lib ./lib
 
