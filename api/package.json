@@ -1,6 +1,6 @@
 {
   "name": "@bdsi-utwente/steers-api",
-  "version": "0.0.4",
+  "version": "1.0.0",
   "description": "",
   "main": "lib/app.js",
   "scripts": {
