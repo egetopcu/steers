@@ -3,7 +3,12 @@ FROM node:lts
 
 WORKDIR /app
 
-COPY ./lib .
+COPY package.json .
+COPY .npmrc .
+
+RUN npm install
+
+COPY ./lib ./lib
 
 EXPOSE 3000
-CMD [ "node", "app.js" ]
+CMD [ "node", "lib/app.js" ]
