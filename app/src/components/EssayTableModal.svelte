@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { QueryData } from "@steers/common";
+    import type { QueryData } from "@bdsi-utwente/steers-common";
     import EssayTable from "./EssayTable.svelte";
     import Modal from "./utility/Modal.svelte";
 

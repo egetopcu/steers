@@ -1,5 +1,5 @@
 import neo4j, { Session } from "neo4j-driver";
-import type { EssayData, TopicData } from "@steers/common";
+import type { EssayData, TopicData } from "@bdsi-utwente/steers-common";
 
 
 const db = neo4j.driver(

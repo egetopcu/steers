@@ -7,7 +7,7 @@ import {
     ClientData,
     CategoryData,
     TopicData,
-} from "@steers/common";
+} from "@bdsi-utwente/steers-common";
 import { Session } from "neo4j-driver";
 import { buildClause } from "./utils";
 import { Programme } from "./programme";

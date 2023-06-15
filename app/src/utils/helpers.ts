@@ -1,4 +1,4 @@
-import type { BaseData, IdType } from "@steers/common";
+import type { BaseData, IdType } from "@bdsi-utwente/steers-common";
 import type { SelectChoice, SelectChoices } from "./types";
 
 export type StringKeys<T extends {}> = {

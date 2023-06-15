@@ -1,7 +1,7 @@
-import { CategoryData, IdType } from "@steers/common";
+import { CategoryData, IdType } from "@bdsi-utwente/steers-common";
 import { int, Session } from "neo4j-driver";
 import { buildRelatedQuery } from "./utils";
-import type { QueryData } from "@steers/common";
+import type { QueryData } from "@bdsi-utwente/steers-common";
 
 export class Category {
     public id: IdType;

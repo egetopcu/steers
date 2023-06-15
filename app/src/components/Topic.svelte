@@ -4,7 +4,7 @@
         ClientData,
         TopicData,
         TutorData,
-    } from "@steers/common";
+    } from "@bdsi-utwente/steers-common";
     import { IQuery, query } from "../stores";
     import {
         getCategories,

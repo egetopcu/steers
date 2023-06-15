@@ -1,5 +1,5 @@
 {
-  "name": "@steers/common",
+  "name": "@bdsi-utwente/steers-common",
   "version": "1.0.0",
   "description": "",
   "main": "lib/types.js",

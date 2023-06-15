@@ -4,7 +4,7 @@ import type {
     TopicData,
     TutorData,
     CategoryData,
-} from "@steers/common";
+} from "@bdsi-utwente/steers-common";
 import { writable } from "svelte/store";
 
 export interface IQuery {

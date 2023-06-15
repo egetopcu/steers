@@ -2,7 +2,7 @@
     import differenceBy from "lodash/differenceBy";
     import debounce from "lodash/debounce";
 
-    import type { CategoryData } from "@steers/common";
+    import type { CategoryData } from "@bdsi-utwente/steers-common";
     import { getCategories } from "../utils/api";
     import { IQuery, query } from "../stores";
 

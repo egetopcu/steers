@@ -4,7 +4,7 @@
         ClientData,
         TopicData,
         TutorData,
-    } from "@steers/common";
+    } from "@bdsi-utwente/steers-common";
     import { IQuery, query } from "../stores";
     import { getTutors, getTopics, getClients } from "../utils/api";
     import { view } from "../utils/view";

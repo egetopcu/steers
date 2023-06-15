@@ -1,4 +1,4 @@
-import { FacultyData, IdType } from "@steers/common";
+import { FacultyData, IdType } from "@bdsi-utwente/steers-common";
 
 export class Faculty {
   id: IdType;

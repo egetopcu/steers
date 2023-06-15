@@ -1,4 +1,4 @@
-import { IdType, QueryData, TopicData } from "@steers/common";
+import { IdType, QueryData, TopicData } from "@bdsi-utwente/steers-common";
 import { Session, int } from "neo4j-driver";
 import { buildRelatedQuery } from "./utils";
 

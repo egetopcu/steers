@@ -2,7 +2,7 @@ import { config } from "dotenv";
 config({ path: "../.env" });
 
 
-import { EssayData } from "@steers/common";
+import { EssayData } from "@bdsi-utwente/steers-common";
 import { getEssays, getSession } from "./db";
 import { getTopics } from "./topics/google-language-api";
 

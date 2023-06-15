@@ -2,7 +2,7 @@
     import Select from "svelte-select";
     import { onMount } from "svelte";
 
-    import type { ProgrammeData } from "@steers/common";
+    import type { ProgrammeData } from "@bdsi-utwente/steers-common";
     import { getProgrammes } from "../utils/api";
     import { query } from "../stores";
 

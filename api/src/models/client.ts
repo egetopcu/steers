@@ -1,5 +1,5 @@
 import { int, Session } from "neo4j-driver";
-import { ClientData, QueryData } from "@steers/common";
+import { ClientData, QueryData } from "@bdsi-utwente/steers-common";
 import { buildRelatedQuery } from "./utils";
 
 export class Client {

@@ -1,5 +1,5 @@
 import { int, Session } from "neo4j-driver";
-import { IdType, QueryData, TutorData } from "@steers/common";
+import { IdType, QueryData, TutorData } from "@bdsi-utwente/steers-common";
 import { buildRelatedQuery } from "./utils";
 
 export class Tutor {

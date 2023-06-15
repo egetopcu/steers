@@ -2,7 +2,7 @@
     import differenceBy from "lodash/differenceBy";
     import debounce from "lodash/debounce";
 
-    import type { TutorData } from "@steers/common";
+    import type { TutorData } from "@bdsi-utwente/steers-common";
     import { getTutors } from "../utils/api";
     import { IQuery, query } from "../stores";
 

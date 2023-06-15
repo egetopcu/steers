@@ -6,7 +6,7 @@ import type {
     QueryData,
     TopicData,
     TutorData,
-} from "@steers/common";
+} from "@bdsi-utwente/steers-common";
 
 const API_BASE = "http://localhost:3000/";
 // const API_BASE = "https://steers-api.home.karel-kroeze.nl/";

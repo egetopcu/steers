@@ -1,7 +1,7 @@
 <script lang="ts">
-    import type { EssayData } from "@steers/common";
+    import type { EssayData } from "@bdsi-utwente/steers-common";
     import { IQuery, query } from "../stores/query";
-    import type { QueryData } from "@steers/common";
+    import type { QueryData } from "@bdsi-utwente/steers-common";
     import { getEssays } from "../utils/api";
     import { format } from "date-fns";
     import Loading from "./utility/Loading.svelte";

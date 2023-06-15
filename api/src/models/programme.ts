@@ -1,5 +1,5 @@
 import { int, Integer, Session } from "neo4j-driver";
-import { IdType, ProgrammeData } from "@steers/common";
+import { IdType, ProgrammeData } from "@bdsi-utwente/steers-common";
 import { QueryData } from "../../../common/lib/types";
 
 export class Programme {

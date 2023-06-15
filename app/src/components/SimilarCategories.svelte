@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { CategoryData, ProgrammeData } from "@steers/common";
+    import type { CategoryData, ProgrammeData } from "@bdsi-utwente/steers-common";
     import { query } from "../stores";
     import { getCategories } from "../utils/api";
     import { view } from "../utils/view";

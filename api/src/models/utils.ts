@@ -1,4 +1,4 @@
-import { QueryData } from "@steers/common";
+import { QueryData } from "@bdsi-utwente/steers-common";
 
 export function parseQueryArray(q: undefined | string | string[]): number[] {
     switch (typeof q) {
