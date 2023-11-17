@@ -95,8 +95,27 @@ clients <- library %>%
     name = `Clients Organization`,
     label = glue::glue_collapse(na.omit(
       c(`Clients Organization`, `Clients Place`, `Clients Country`)
-    ), sep = ", ")
+    ), sep = ", "),
+    place = `Clients Place`,
+    country = `Clients Country`
   ) %>% filter(label %>% stringr::str_detect(","))
+
+# # 2023-11-17: create temporary json file as intermediate data source
+# library(jsonlite)
+
+# library %>% 
+#   distinct(
+#     essay_id = `Item ID`, 
+#     author = `Author Name`,
+#     faculty = Faculty,
+#     programme = `Programme (CROHO)`,
+#     abstract = Abstract) %>% 
+#   sample_n(50) %>% 
+#   left_join(keywords %>% nest(keywords = name)) %>%
+#   left_join(subjects %>% separate_longer_delim(name, ", ") %>% nest(subjects = name)) %>% 
+#   left_join(lib_tutors %>% nest(tutors = c(name, type))) %>% 
+#   left_join(clients %>% select(-label) %>% nest(clients = c(name, place, country))) %>% 
+#   jsonlite::write_json(here("data/example_raw_data.json"), pretty = 2)
 
 
 # set up ingest DB connection ---------------------------------------------
