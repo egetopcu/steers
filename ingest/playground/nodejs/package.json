@@ -10,7 +10,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@google-cloud/language": "^5.1.2",
+        "@google-cloud/language": "^6.0.0",
         "@bdsi-utwente/steers-common": "workspace:^1.0.0",
         "@types/node": "^18.11.18",
         "dotenv": "^16.0.3",
