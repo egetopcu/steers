@@ -15,6 +15,8 @@ Fetch new essays from the University of Twente essays OAI API.
 from sickle import Sickle
 import xml.etree.ElementTree as ET
 import json
+from neo4j import GraphDatabase
+
 
 from xml.etree import ElementTree as ET
 
@@ -78,21 +80,43 @@ def fetch_new_essays(base_url):
 
     return essays
 
-def save_to_json(essays, file_path):
-    with open(file_path, 'w') as file:
-        json.dump(essays, file, indent=4)
+def save_to_neo4j(essays, uri, user, password):
+    driver = GraphDatabase.driver(uri, auth=(user, password))
+
+    def add_essay(tx, essay):
+        tx.run("CREATE (e:Essay {title: $title, creators: $creators, subject: $subject, "
+               "description: $description, date: $date, type: $type, format: $format, "
+               "identifier: $identifier, source: $source, language: $language})",
+               title=essay.get('title'),
+               creators=essay.get('creators'),
+               subject=essay.get('subject'),
+               description=essay.get('description'),
+               date=essay.get('date'),
+               type=essay.get('type'),
+               format=essay.get('format'),
+               identifier=essay.get('identifier'),
+               source=essay.get('source'),
+               language=essay.get('language'))
+
+    with driver.session() as session:
+        for essay in essays:
+            session.write_transaction(add_essay, essay)
+
+    driver.close()
 
 params = {
     "metadataPrefix": "oai_dc",
-    # example time, ideally, you’d use the timestamp from the previous API response
     "from": "2023-12-01T00:00:00Z"
 }
 
-
 base_url = 'https://essay.utwente.nl/cgi/oai2'
-
 new_essays = fetch_new_essays(base_url)
 
-save_to_json(new_essays, 'utwente_essays.json')
+# Neo4j connection details
+neo4j_uri = "bolt://localhost:7687"  # Replace with your Neo4j URI
+neo4j_user = "neo4j"                # Replace with your Neo4j username
+neo4j_password = "password"         # Replace with your Neo4j password
 
-print("Essays have been fetched and saved.")
+save_to_neo4j(new_essays, neo4j_uri, neo4j_user, neo4j_password)
+
+print("Essays have been fetched and saved to Neo4j.")

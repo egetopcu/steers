@@ -22,7 +22,7 @@ services:
 
     # first time setup
     environment:
-      - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+      - NEO4J_AUTH=neo4j/password
       - NEO4J_PLUGINS=["graph-data-science", "apoc"]
 
   adminer:
