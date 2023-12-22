@@ -16,10 +16,18 @@ from sickle import Sickle
 import xml.etree.ElementTree as ET
 import json
 
+from xml.etree import ElementTree as ET
+
 def parse_xml_record(record):
-    namespaces = {'oai_dc': 'http://purl.org/dc/elements/1.1/'}
+    namespaces = {
+        'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
+        'dc': 'http://purl.org/dc/elements/1.1/'
+    }
+
     try:
-        tree = ET.ElementTree(ET.fromstring(record.raw.encode('utf-8')))
+        # Assuming record.raw_xml is the property/method that gives you the raw XML string
+        raw_xml = record.raw_xml if hasattr(record, 'raw_xml') else str(record)
+        tree = ET.ElementTree(ET.fromstring(raw_xml.encode('utf-8')))
         root = tree.getroot()
         metadata = root.find('.//{http://www.openarchives.org/OAI/2.0/}metadata')
 
@@ -27,26 +35,28 @@ def parse_xml_record(record):
             dc = metadata.find('.//oai_dc:dc', namespaces)
             if dc is not None:
                 data = {
-                   'title': dc.findtext('oai_dc:title', namespaces=namespaces),
-                    'creator': dc.findtext('oai_dc:creator', namespaces=namespaces),
-                    'subject': dc.findtext('oai_dc:subject', namespaces=namespaces),
-                    'description': dc.findtext('oai_dc:description', namespaces=namespaces),
-                    'date': dc.findtext('oai_dc:date', namespaces=namespaces),
-                    'type': dc.findtext('oai_dc:type', namespaces=namespaces),
-                    'format': dc.findtext('oai_dc:format', namespaces=namespaces),
-                    'identifier': dc.findtext('oai_dc:identifier', namespaces=namespaces),
-                    'source': dc.findtext('oai_dc:source', namespaces=namespaces),
-                    'language': dc.findtext('oai_dc:language', namespaces=namespaces)
+                    'title': dc.findtext('dc:title', namespaces=namespaces),
+                    'creators': [creator.text for creator in dc.findall('dc:creator', namespaces=namespaces)],
+                    'subject': dc.findtext('dc:subject', namespaces=namespaces),
+                    'description': dc.findtext('dc:description', namespaces=namespaces),
+                    'date': dc.findtext('dc:date', namespaces=namespaces),
+                    'type': dc.findtext('dc:type', namespaces=namespaces),
+                    'format': dc.findtext('dc:format', namespaces=namespaces),
+                    'identifier': dc.findtext('dc:identifier', namespaces=namespaces),
+                    'source': dc.findtext('dc:source', namespaces=namespaces),
+                    'language': dc.findtext('dc:language', namespaces=namespaces)
                 }
                 return data
-    except ET.ParseError:
-        print("Error parsing XML for record:")
-        print(record.raw)
+
+    except ET.ParseError as e:
+        print(f"Error parsing XML for record: {e}")
+        print(record)
     except Exception as e:
         print(f"Unexpected error: {e}")
-        print(record.raw)
+        print(record)
 
     return None
+
 
 def fetch_new_essays(base_url):
     sickle_client = Sickle(base_url)
