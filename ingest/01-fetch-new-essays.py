@@ -38,7 +38,7 @@ def parse_xml_record(record):
             if dc is not None:
                 data = {
                     'title': dc.findtext('dc:title', namespaces=namespaces),
-                    'creators': [creator.text for creator in dc.findall('dc:creator', namespaces=namespaces)],
+                    'author': [creator.text for creator in dc.findall('dc:creator', namespaces=namespaces)],
                     'subject': dc.findtext('dc:subject', namespaces=namespaces),
                     'description': dc.findtext('dc:description', namespaces=namespaces),
                     'date': dc.findtext('dc:date', namespaces=namespaces),
@@ -84,11 +84,11 @@ def save_to_neo4j(essays, uri, user, password):
     driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def add_essay(tx, essay):
-        tx.run("CREATE (e:Essay {title: $title, creators: $creators, subject: $subject, "
+        tx.run("CREATE (e:Essay {title: $title, author: $author, subject: $subject, "
                "description: $description, date: $date, type: $type, format: $format, "
                "identifier: $identifier, source: $source, language: $language})",
                title=essay.get('title'),
-               creators=essay.get('creators'),
+               author=essay.get('author'),
                subject=essay.get('subject'),
                description=essay.get('description'),
                date=essay.get('date'),
@@ -113,9 +113,9 @@ base_url = 'https://essay.utwente.nl/cgi/oai2'
 new_essays = fetch_new_essays(base_url)
 
 # Neo4j connection details
-neo4j_uri = "bolt://localhost:7687"  # Replace with your Neo4j URI
-neo4j_user = "neo4j"                # Replace with your Neo4j username
-neo4j_password = "password"         # Replace with your Neo4j password
+neo4j_uri = "bolt://localhost:7687"
+neo4j_user = "neo4j"
+neo4j_password = "password"
 
 save_to_neo4j(new_essays, neo4j_uri, neo4j_user, neo4j_password)
 
